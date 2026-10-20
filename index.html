@@ -222,9 +222,12 @@
                         <span id="league-name-display">League Name</span>
                         <span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-1 rounded uppercase tracking-wider font-bold">Active</span>
                     </h2>
-                    <p class="text-slate-400 text-sm mt-1 flex items-center gap-2">
-                        ID: <span id="league-id-display" class="font-mono text-emerald-300 select-all"></span>
-                        <button onclick="copyToClipboard(document.getElementById('league-id-display').innerText)" class="hover:text-white" title="Copy ID"><i class="fas fa-copy"></i></button>
+                    <p class="text-slate-400 text-sm mt-1 flex items-center gap-3">
+                        <span>ID: <span id="league-id-display" class="font-mono text-emerald-300 select-all"></span>
+                        <button onclick="copyToClipboard(document.getElementById('league-id-display').innerText)" class="hover:text-white ml-1" title="Copy ID"><i class="fas fa-copy"></i></button></span>
+                        <button onclick="promptDeleteCurrentLeague()" class="text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-xs px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors">
+                            <i class="fas fa-trash-alt"></i> Delete League
+                        </button>
                     </p>
                 </div>
                 <div class="flex bg-slate-900 rounded-lg p-1 overflow-x-auto w-full md:w-auto">
@@ -243,16 +246,16 @@
                             <span class="bg-slate-800 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-slate-700" id="week-display-badge">Week 7</span>
                             <h3 class="text-2xl font-black">Weekly Spin Draft</h3>
                         </div>
-                        <p class="text-slate-400 text-sm mb-8 max-w-md">Spin the wheel to draft players from live NFL and NCAA matchups. AI opponents repick dynamically every week!</p>
+                        <p class="text-slate-400 text-sm mb-8 max-w-md">20 entirely randomized teams (10 NFL from all 32 franchises + 10 NCAA from all conferences nationwide). Spin to build your lineup!</p>
                         
                         <div class="bg-slate-900 rounded-xl p-6 border border-slate-700 w-full max-w-md mb-8 relative shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                             <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-slate-900 text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-widest z-10">
-                                Live ESPN Weekly Pool
+                                20 Randomized Teams (10 NFL + 10 NCAA)
                             </div>
                             
                             <div class="spinner-container mb-6" id="spinner-container">
                                 <div class="spinner-track" id="spinner-track">
-                                    <div class="spinner-item">LOADING LIVE TEAMS...</div>
+                                    <div class="spinner-item">SELECTING 20 RANDOM TEAMS...</div>
                                 </div>
                                 <div class="absolute inset-0 border-y-4 border-emerald-500 pointer-events-none opacity-50"></div>
                             </div>
@@ -335,12 +338,10 @@
                             </div>
                         </div>
                         
-                        <!-- Status indicator banner for active week vs concluded final -->
                         <div id="matchup-game-status" class="w-full text-center py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider bg-slate-900 border border-slate-700 text-slate-400">
                             Games In Progress • Official Results Settle After Monday Night Football
                         </div>
 
-                        <!-- Celebration or Defeat Banner: Locked until MNF officially goes final -->
                         <div id="matchup-banner" class="w-full hidden text-center py-3 px-4 rounded-xl font-black text-lg uppercase tracking-wider shadow-lg"></div>
 
                         <div class="w-full bg-slate-900 rounded-lg p-3 border border-slate-700 flex flex-col md:flex-row text-xs mt-2 gap-3">
@@ -373,6 +374,25 @@
         </div>
 
     </main>
+
+    <!-- CONFIRM DELETE MODAL -->
+    <div id="delete-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel rounded-2xl w-full max-w-sm p-6 flex flex-col shadow-2xl border border-rose-500/40 text-center">
+            <div class="w-12 h-12 rounded-full bg-rose-500/20 border border-rose-500/30 flex items-center justify-center mx-auto mb-4 text-rose-400 text-xl">
+                <i class="fas fa-trash-alt"></i>
+            </div>
+            <h3 class="font-black text-lg text-white mb-2">Delete League</h3>
+            <p class="text-xs text-slate-400 mb-6">Are you sure you want to delete <span id="delete-league-name" class="font-bold text-white"></span>? All rosters, matchups, and standings will be permanently removed.</p>
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-lg text-xs transition-colors">
+                    Cancel
+                </button>
+                <button id="confirm-delete-btn" onclick="executeDeleteLeague()" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded-lg text-xs transition-colors shadow-lg shadow-rose-900/40">
+                    Delete
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- PLAYER MODAL -->
     <div id="player-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
@@ -412,8 +432,8 @@
         let currentActiveSlot = null;
         let currentWeekTeams = [];
         let leaguesData = JSON.parse(localStorage.getItem('any_given_spinday_leagues') || '{}');
+        let pendingDeleteId = null;
 
-        // Week tracking state & MNF completion detector
         let currentSeasonWeek = 7;
         let isMondayNightFootballFinal = false;
 
@@ -430,40 +450,53 @@
             fetchTeamsFromESPNEndpoints();
         });
 
+        // Fisher-Yates array randomizer
+        function shuffleArray(arr) {
+            const copy = [...arr];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
         async function fetchTeamsFromESPNEndpoints() {
             try {
-                let teamsList = [];
-                
-                const nflTeamsRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams');
-                const nflScoreRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard');
-                
-                if (nflTeamsRes.ok) {
-                    const nflData = await nflTeamsRes.json();
-                    let nflEvents = [];
-                    if (nflScoreRes.ok) {
-                        const scoreData = await nflScoreRes.json();
-                        nflEvents = scoreData.events || [];
-                        if (scoreData.week && scoreData.week.number) {
-                            currentSeasonWeek = scoreData.week.number;
-                            document.getElementById('week-display-badge').innerText = `Week ${currentSeasonWeek}`;
-                        }
+                let allNflTeams = [];
+                let allNcaafTeams = [];
 
-                        // Determine if all games in the current NFL week (including Monday Night Football) have officially concluded
-                        if (nflEvents.length > 0) {
-                            const uncompletedEvents = nflEvents.filter(ev => {
-                                const statusType = ev.status && ev.status.type ? ev.status.type.state : 'pre';
-                                return statusType !== 'post';
-                            });
-                            isMondayNightFootballFinal = uncompletedEvents.length === 0;
-                        }
+                // 1. Fetch ALL 32 NFL teams & live scoreboards
+                const [nflTeamsRes, nflScoreRes] = await Promise.all([
+                    fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams'),
+                    fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard')
+                ]);
+
+                let nflEvents = [];
+                if (nflScoreRes.ok) {
+                    const scoreData = await nflScoreRes.json();
+                    nflEvents = scoreData.events || [];
+                    if (scoreData.week && scoreData.week.number) {
+                        currentSeasonWeek = scoreData.week.number;
+                        document.getElementById('week-display-badge').innerText = `Week ${currentSeasonWeek}`;
                     }
 
+                    if (nflEvents.length > 0) {
+                        const uncompletedEvents = nflEvents.filter(ev => {
+                            const statusType = ev.status && ev.status.type ? ev.status.type.state : 'pre';
+                            return statusType !== 'post';
+                        });
+                        isMondayNightFootballFinal = uncompletedEvents.length === 0;
+                    }
+                }
+
+                if (nflTeamsRes.ok) {
+                    const nflData = await nflTeamsRes.json();
                     const sportsTeams = nflData.sports[0].leagues[0].teams;
                     sportsTeams.forEach(item => {
                         const t = item.team;
                         const teamId = t.id;
                         const name = t.displayName || t.name;
-                        const logoUrl = t.logos && t.logos.length > 0 ? t.logos[0].href : `https://a.espncdn.com/i/teamlogos/nfl/500/${t.abbreviation.toLowerCase()}.png`;
+                        const logoUrl = t.logos && t.logos.length > 0 ? t.logos[0].href : `https://a.espncdn.com/i/teamlogos/nfl/500/${t.abbreviation ? t.abbreviation.toLowerCase() : teamId}.png`;
                         
                         let matchup = "vs. Bye Week";
                         let datetime = "Sun • 1:00 PM EDT";
@@ -484,7 +517,7 @@
                             }
                         }
 
-                        teamsList.push({
+                        allNflTeams.push({
                             name: name,
                             id: teamId,
                             sport: "nfl",
@@ -495,17 +528,20 @@
                     });
                 }
 
-                const ncaafTeamsRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=50');
-                const ncaafScoreRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard');
+                // 2. Fetch full nationwide pool of College Football FBS teams (limit=700 spans all conferences)
+                const [ncaafTeamsRes, ncaafScoreRes] = await Promise.all([
+                    fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=700'),
+                    fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?limit=100&groups=80')
+                ]);
+
+                let ncaafEvents = [];
+                if (ncaafScoreRes.ok) {
+                    const scoreData = await ncaafScoreRes.json();
+                    ncaafEvents = scoreData.events || [];
+                }
 
                 if (ncaafTeamsRes.ok) {
                     const ncaafData = await ncaafTeamsRes.json();
-                    let ncaafEvents = [];
-                    if (ncaafScoreRes.ok) {
-                        const scoreData = await ncaafScoreRes.json();
-                        ncaafEvents = scoreData.events || [];
-                    }
-
                     const cfbTeams = ncaafData.sports[0].leagues[0].teams;
                     cfbTeams.forEach(item => {
                         const t = item.team;
@@ -532,7 +568,7 @@
                             }
                         }
 
-                        teamsList.push({
+                        allNcaafTeams.push({
                             name: name,
                             id: teamId,
                             sport: "college-football",
@@ -543,19 +579,44 @@
                     });
                 }
 
-                if (teamsList.length > 0) {
-                    currentWeekTeams = teamsList;
+                // 3. Randomize across the complete spectrum: 10 NFL + 10 NCAA
+                const random10NFL = shuffleArray(allNflTeams).slice(0, 10);
+                const random10NCAA = shuffleArray(allNcaafTeams).slice(0, 10);
+                const combinedPool = shuffleArray([...random10NFL, ...random10NCAA]);
+
+                if (combinedPool.length >= 20) {
+                    currentWeekTeams = combinedPool;
                 } else {
-                    throw new Error("No teams parsed");
+                    throw new Error("Pool too small");
                 }
                 renderSpinnerTrack();
             } catch (err) {
-                currentWeekTeams = [
-                    { name: "Kansas City Chiefs", id: "12", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png", matchup: "vs. Las Vegas Raiders", datetime: "Sun • 4:25 PM EDT" },
-                    { name: "San Francisco 49ers", id: "25", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png", matchup: "@ Dallas Cowboys", datetime: "Sun • 8:20 PM EDT" },
-                    { name: "Georgia Bulldogs", id: "61", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png", matchup: "vs. Florida Gators", datetime: "Sat • 3:30 PM EDT" },
-                    { name: "Ohio State Buckeyes", id: "194", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png", matchup: "@ Penn State Nittany Lions", datetime: "Sat • 7:30 PM EDT" }
+                // Robust randomized fallback across multiple conferences
+                const backupNFL = [
+                    { name: "Arizona Cardinals", id: "22", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png", matchup: "vs. Seahawks", datetime: "Sun • 4:05 PM EDT" },
+                    { name: "Atlanta Falcons", id: "1", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/atl.png", matchup: "@ Saints", datetime: "Sun • 1:00 PM EDT" },
+                    { name: "Buffalo Bills", id: "2", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png", matchup: "vs. Dolphins", datetime: "Sun • 1:00 PM EDT" },
+                    { name: "Chicago Bears", id: "3", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png", matchup: "@ Packers", datetime: "Sun • 4:25 PM EDT" },
+                    { name: "Denver Broncos", id: "7", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/den.png", matchup: "vs. Chiefs", datetime: "Sun • 4:25 PM EDT" },
+                    { name: "Detroit Lions", id: "8", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/det.png", matchup: "vs. Vikings", datetime: "Sun • 1:00 PM EDT" },
+                    { name: "Houston Texans", id: "34", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/hou.png", matchup: "@ Colts", datetime: "Sun • 1:00 PM EDT" },
+                    { name: "Jacksonville Jaguars", id: "30", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/jax.png", matchup: "vs. Titans", datetime: "Sun • 1:00 PM EDT" },
+                    { name: "Philadelphia Eagles", id: "21", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png", matchup: "@ Giants", datetime: "Sun • 1:00 PM EDT" },
+                    { name: "San Francisco 49ers", id: "25", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png", matchup: "vs. Rams", datetime: "Sun • 8:20 PM EDT" }
                 ];
+                const backupNCAA = [
+                    { name: "Appalachian State", id: "2026", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2026.png", matchup: "@ Marshall", datetime: "Sat • 3:30 PM EDT" },
+                    { name: "Boise State Broncos", id: "68", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/68.png", matchup: "vs. Fresno State", datetime: "Sat • 10:00 PM EDT" },
+                    { name: "Colorado Buffaloes", id: "38", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/38.png", matchup: "vs. Utah", datetime: "Sat • 12:00 PM EDT" },
+                    { name: "Georgia Bulldogs", id: "61", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png", matchup: "vs. Florida", datetime: "Sat • 3:30 PM EDT" },
+                    { name: "Iowa State Cyclones", id: "66", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/66.png", matchup: "@ Kansas State", datetime: "Sat • 7:30 PM EDT" },
+                    { name: "Memphis Tigers", id: "235", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/235.png", matchup: "vs. Tulane", datetime: "Sat • 7:00 PM EDT" },
+                    { name: "Miami Hurricanes", id: "2390", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png", matchup: "vs. Florida State", datetime: "Sat • 7:30 PM EDT" },
+                    { name: "SMU Mustangs", id: "2567", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2567.png", matchup: "@ Louisville", datetime: "Sat • 4:00 PM EDT" },
+                    { name: "Texas Longhorns", id: "251", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png", matchup: "@ Vanderbilt", datetime: "Sat • 4:15 PM EDT" },
+                    { name: "Washington Huskies", id: "264", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/264.png", matchup: "@ Oregon", datetime: "Sat • 8:00 PM EDT" }
+                ];
+                currentWeekTeams = shuffleArray([...backupNFL, ...backupNCAA]);
                 renderSpinnerTrack();
             }
         }
@@ -600,8 +661,8 @@
                 const isComplete = filledCount >= 9;
 
                 html += `
-                    <div onclick="enterLeague('${id}')" class="glass-panel p-4 rounded-xl border border-slate-700/80 hover:border-emerald-500/65 transition-all cursor-pointer flex justify-between items-center group">
-                        <div class="flex items-center gap-3">
+                    <div class="glass-panel p-4 rounded-xl border border-slate-700/80 hover:border-emerald-500/65 transition-all flex justify-between items-center group">
+                        <div onclick="enterLeague('${id}')" class="flex items-center gap-3 flex-1 cursor-pointer">
                             <div class="bg-slate-800 group-hover:bg-emerald-600/20 w-10 h-10 rounded-lg flex items-center justify-center transition-colors">
                                 <i class="fas fa-trophy text-emerald-400"></i>
                             </div>
@@ -610,16 +671,58 @@
                                 <p class="text-xs text-slate-400 font-mono">ID: ${id} • Members: ${Object.keys(lg.rosters || {}).length}</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <span class="text-xs font-bold px-3 py-1 rounded-full ${isComplete ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}">
+                        <div class="flex items-center gap-2">
+                            <span onclick="enterLeague('${id}')" class="text-xs font-bold px-3 py-1 rounded-full cursor-pointer ${isComplete ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}">
                                 ${isComplete ? 'Draft Complete' : `Action Required (${filledCount}/9)`}
                             </span>
-                            <i class="fas fa-chevron-right text-slate-500 group-hover:text-white transition-colors"></i>
+                            <button onclick="promptDeleteLeague('${id}', event)" title="Delete League" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700 hover:border-rose-500/40 flex items-center justify-center transition-colors">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
+                            <i onclick="enterLeague('${id}')" class="fas fa-chevron-right text-slate-500 group-hover:text-white transition-colors cursor-pointer ml-1"></i>
                         </div>
                     </div>
                 `;
             });
             listEl.innerHTML = html;
+        }
+
+        function promptDeleteLeague(id, event) {
+            if (event) event.stopPropagation();
+            pendingDeleteId = id;
+            const league = leaguesData[id];
+            document.getElementById('delete-league-name').innerText = league ? `"${league.name}"` : 'this league';
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+
+        function promptDeleteCurrentLeague() {
+            if (currentLeague && currentLeague.id) {
+                promptDeleteLeague(currentLeague.id);
+            }
+        }
+
+        function closeDeleteModal() {
+            pendingDeleteId = null;
+            document.getElementById('delete-modal').classList.add('hidden');
+        }
+
+        function executeDeleteLeague() {
+            if (!pendingDeleteId || !leaguesData[pendingDeleteId]) {
+                closeDeleteModal();
+                return;
+            }
+
+            const deletedName = leaguesData[pendingDeleteId].name;
+            delete leaguesData[pendingDeleteId];
+            localStorage.setItem('any_given_spinday_leagues', JSON.stringify(leaguesData));
+
+            if (currentLeague && currentLeague.id === pendingDeleteId) {
+                returnToLobby();
+            } else {
+                renderLeaguesHub();
+            }
+
+            closeDeleteModal();
+            showToast(`Deleted "${deletedName}"`);
         }
 
         function createLeague() {
@@ -698,7 +801,6 @@
             currentLeague = leaguesData[leagueId];
             currentLeague.id = leagueId;
 
-            // Synchronize AI weekly team repick
             syncWeeklyAIRoster();
 
             document.getElementById('league-name-display').innerText = currentLeague.name;
@@ -710,7 +812,6 @@
             switchTab('spin');
         }
 
-        // Automatic weekly repick for AI teams matching human roulette format
         function syncWeeklyAIRoster() {
             if (!currentLeague.aiRosters) currentLeague.aiRosters = {};
             
@@ -949,7 +1050,6 @@
                 }
             }
 
-            // Starters to the top, ordered by projected points descending
             filteredPlayers.sort((a, b) => {
                 if (a.isStarter !== b.isStarter) {
                     return a.isStarter ? -1 : 1;
@@ -1130,7 +1230,6 @@
             const scheduleText = firstPlayer && firstPlayer.datetime ? `${firstPlayer.datetime} • ${firstPlayer.matchup}` : (currentWeekTeams.length > 0 ? `${currentWeekTeams[0].datetime} • ${currentWeekTeams[0].matchup}` : "Sun • 1:00 PM EDT");
             document.getElementById('matchup-datetime-text').innerText = scheduleText;
 
-            // Retrieve dynamically repicked AI roster for this week
             const aiWeekKey = `week_${currentSeasonWeek}`;
             const oppRoster = (oppName === "AI Rival") 
                 ? (currentLeague.aiRosters && currentLeague.aiRosters[aiWeekKey] ? currentLeague.aiRosters[aiWeekKey] : {}) 
@@ -1143,7 +1242,6 @@
             if (oppTotal === 0 && oppName === "AI Rival") oppTotal = 94.2;
             document.getElementById('matchup-opp-score').innerText = oppTotal.toFixed(1);
 
-            // Render Human Roster
             let myRosterHtml = `<div class="font-bold text-slate-400 mb-1">${myName}'s Lineup</div>`;
             POSITIONS.forEach(pos => {
                 const p = myRoster[pos];
@@ -1157,7 +1255,6 @@
             });
             document.getElementById('matchup-my-roster').innerHTML = myRosterHtml;
 
-            // Render AI Opponent Roster
             let oppRosterHtml = `<div class="font-bold text-slate-400 mb-1">${oppName}'s Lineup (Week ${currentSeasonWeek} Repick)</div>`;
             POSITIONS.forEach(pos => {
                 const p = oppRoster[pos];
@@ -1171,7 +1268,6 @@
             });
             document.getElementById('matchup-opp-roster').innerHTML = oppRosterHtml;
 
-            // Status message and Winner/Loser animation gated by Monday Night Football completion
             const statusEl = document.getElementById('matchup-game-status');
             const banner = document.getElementById('matchup-banner');
 
