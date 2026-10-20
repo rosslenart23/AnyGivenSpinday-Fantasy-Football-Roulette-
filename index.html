@@ -150,6 +150,7 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between">
 
+    <!-- Top Navigation Header -->
     <header class="glass-panel border-b border-slate-800 sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
         <div class="flex items-center gap-3 cursor-pointer" onclick="returnToLobby()">
             <div class="bg-gradient-to-tr from-emerald-500 to-teal-400 p-2.5 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)]">
@@ -242,7 +243,7 @@
                         <span id="league-name-display">League Name</span>
                         <span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-1 rounded uppercase tracking-wider font-bold">Active</span>
                     </h2>
-                    <p class="text-slate-400 text-sm mt-1 flex items-center gap-3">
+                    <p class="text-slate-400 text-sm mt-1 flex items-center gap-3 flex-wrap">
                         <span>ID: <span id="league-id-display" class="font-mono text-emerald-300 select-all"></span>
                         <button onclick="copyToClipboard(document.getElementById('league-id-display').innerText)" class="hover:text-white ml-1" title="Copy ID"><i class="fas fa-copy"></i></button></span>
                         <span id="commish-badge-header" class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold flex items-center gap-1">
@@ -822,6 +823,7 @@
 
         const POSITIONS = ['QB', 'RB1', 'RB2', 'WR1', 'WR2', 'TE', 'FLEX', 'DST', 'K'];
 
+        // Master list of all 138 NCAA Division I FBS programs for the 2026 season
         const FBS_138_MASTER = [
             { name: "Air Force Falcons", id: "2005" },
             { name: "Akron Zips", id: "2006" },
@@ -1018,6 +1020,63 @@
             return fallbackLogo || "https://a.espncdn.com/i/teamlogos/nfl/500/nfl.png";
         }
 
+        function getManagerRespins() {
+            if (!currentLeague) return 3;
+            if (!currentLeague.respins) currentLeague.respins = {};
+            const weekKey = `week_${activeSlateWeek}`;
+            if (!currentLeague.respins[weekKey]) currentLeague.respins[weekKey] = {};
+            if (typeof currentLeague.respins[weekKey][currentUser.name] === 'undefined') {
+                currentLeague.respins[weekKey][currentUser.name] = 3;
+            }
+            return currentLeague.respins[weekKey][currentUser.name];
+        }
+
+        function setManagerRespins(count) {
+            if (!currentLeague) return;
+            if (!currentLeague.respins) currentLeague.respins = {};
+            const weekKey = `week_${activeSlateWeek}`;
+            if (!currentLeague.respins[weekKey]) currentLeague.respins[weekKey] = {};
+            currentLeague.respins[weekKey][currentUser.name] = Math.max(0, count);
+            saveLeaguesStorage();
+            updateRespinBadgesUI();
+        }
+
+        function updateRespinBadgesUI() {
+            const count = getManagerRespins();
+            const badgeTeam = document.getElementById('respin-count');
+            const badgeSpin = document.getElementById('spin-respin-count');
+            if (badgeTeam) badgeTeam.innerText = count;
+            if (badgeSpin) badgeSpin.innerText = count;
+            updateSpinButtonLockState();
+        }
+
+        function updateSpinButtonLockState() {
+            const btn = document.getElementById('spin-btn');
+            const subtext = document.getElementById('spin-subtext');
+            if (!btn || !currentLeague) return;
+
+            const roster = (currentLeague.rosters && currentLeague.rosters[currentUser.name]) || {};
+            const filledCount = Object.keys(roster).length;
+            const respinsLeft = getManagerRespins();
+
+            if (filledCount >= 9) {
+                btn.disabled = true;
+                btn.className = "w-full bg-slate-800 text-slate-400 font-black py-4 px-6 rounded-lg text-lg border border-slate-700 cursor-not-allowed shadow-none";
+                if (respinsLeft > 0) {
+                    btn.innerHTML = `<i class="fas fa-lock mr-2 text-amber-400"></i> ROSTER LOCKED (9/9)`;
+                    if (subtext) subtext.innerHTML = `<span class="text-amber-400 font-bold">Roster Full!</span> Clear a player via Re-spin in 'My Team' to spin again (${respinsLeft} left).`;
+                } else {
+                    btn.innerHTML = `<i class="fas fa-ban mr-2 text-rose-500"></i> NO RE-SPINS REMAINING`;
+                    if (subtext) subtext.innerHTML = `<span class="text-rose-400 font-bold">Roster Locked for the Week. All 3 re-spins used.</span>`;
+                }
+            } else {
+                btn.disabled = false;
+                btn.className = "w-full bg-gradient-to-b from-emerald-400 to-emerald-600 hover:from-emerald-300 hover:to-emerald-500 text-slate-900 font-black py-4 px-6 rounded-lg text-xl shadow-[0_4px_0_rgb(4,120,87)] active:shadow-[0_0px_0_rgb(4,120,87)] active:translate-y-1 transition-all";
+                btn.innerHTML = `SPIN <i class="fas fa-dharmachakra ml-2"></i>`;
+                if (subtext) subtext.innerHTML = `<i class="fas fa-redo-alt text-emerald-400 text-[10px]"></i> Re-spins Remaining: <span id="spin-respin-count" class="text-emerald-400 font-black">${respinsLeft}</span> / 3`;
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             const savedName = localStorage.getItem('any_given_spinday_user');
             if (savedName) {
@@ -1158,7 +1217,7 @@
                     targetNcaafEvents = data.events || [];
                 }
 
-                // Strictly evaluate status against TARGET week's events
+                // Check ONLY target week events to determine if current week has actually kicked off
                 const targetInProgress = targetNflEvents.filter(ev => ev.status?.type?.state === 'in').length;
                 const targetFinished = targetNflEvents.filter(ev => ev.status?.type?.state === 'post').length;
                 isCurrentWeekStarted = (targetInProgress > 0 || targetFinished > 0);
@@ -1279,7 +1338,7 @@
                     const random15NCAA = shuffleArray(poolNcaafEligible).slice(0, 15);
                     currentWeekTeams = shuffleArray([...random15NFL, ...random15NCAA]);
                 } else {
-                    throw new Error("Pool smaller than 15 each, using verified fallback");
+                    throw new Error("Pool smaller than 15 each, using 30-team verified fallback");
                 }
                 renderSpinnerTrack();
                 updateCommissionerUI();
@@ -1762,50 +1821,63 @@
             currentLeague = leaguesData[leagueId];
             currentLeague.id = leagueId;
 
+            // Ensure commissioner exists
             if (!currentLeague.commissioner) {
                 const members = Object.keys(currentLeague.rosters || {});
                 currentLeague.commissioner = members[0] || currentUser.name;
                 saveLeaguesStorage();
             }
 
+            // Restore synced team pool if commissioner had previously re-rolled it
             if (currentLeague.weeklyTeamPool && currentLeague.weeklyTeamPool.length === 30) {
                 currentWeekTeams = currentLeague.weeklyTeamPool;
                 renderSpinnerTrack();
             }
 
-            if (typeof window.listenToActiveLeague === 'function') {
-                window.listenToActiveLeague(leagueId, (cloudLeague) => {
-                    if (cloudLeague && currentLeague && currentLeague.id === leagueId) {
-                        currentLeague = cloudLeague;
-                        leaguesData[leagueId] = cloudLeague;
-                        saveLocalLeaguesStorage();
-                        if (cloudLeague.weeklyTeamPool && cloudLeague.weeklyTeamPool.length === 30) {
-                            currentWeekTeams = cloudLeague.weeklyTeamPool;
-                            renderSpinnerTrack();
-                        }
-                        updateFieldUI();
-                        updateRespinBadgesUI();
-                        updateCommissionerUI();
-                        populateOpponentDropdown();
-                        if (!document.getElementById('tab-content-team').classList.contains('hidden')) renderMyTeam();
-                        if (!document.getElementById('tab-content-matchup').classList.contains('hidden')) renderMatchup();
-                        if (!document.getElementById('tab-content-standings').classList.contains('hidden')) renderStandings();
-                    }
-                });
-            }
-
-            await syncWeeklyAIRoster();
-            populateOpponentDropdown();
-            updateRespinBadgesUI();
-            updateCommissionerUI();
-
+            // 1. Immediately switch the view so the UI never hangs or freezes
             document.getElementById('league-name-display').innerText = currentLeague.name;
             document.getElementById('league-id-display').innerText = leagueId;
-
             document.getElementById('view-lobby').classList.add('hidden');
             document.getElementById('view-league').classList.remove('hidden');
 
+            updateFieldUI();
+            updateRespinBadgesUI();
+            updateCommissionerUI();
+            populateOpponentDropdown();
             switchTab('spin');
+
+            // 2. Set up real-time sync listener safely
+            if (typeof window.listenToActiveLeague === 'function') {
+                try {
+                    window.listenToActiveLeague(leagueId, (cloudLeague) => {
+                        if (cloudLeague && currentLeague && currentLeague.id === leagueId) {
+                            currentLeague = cloudLeague;
+                            leaguesData[leagueId] = cloudLeague;
+                            saveLocalLeaguesStorage();
+                            if (cloudLeague.weeklyTeamPool && cloudLeague.weeklyTeamPool.length === 30) {
+                                currentWeekTeams = cloudLeague.weeklyTeamPool;
+                                renderSpinnerTrack();
+                            }
+                            updateFieldUI();
+                            updateRespinBadgesUI();
+                            updateCommissionerUI();
+                            populateOpponentDropdown();
+                            if (!document.getElementById('tab-content-team').classList.contains('hidden')) renderMyTeam();
+                            if (!document.getElementById('tab-content-matchup').classList.contains('hidden')) renderMatchup();
+                            if (!document.getElementById('tab-content-standings').classList.contains('hidden')) renderStandings();
+                        }
+                    });
+                } catch (e) {
+                    console.warn("Active league listener setup error:", e);
+                }
+            }
+
+            // 3. Synchronize AI roster in background without blocking the UI
+            try {
+                syncWeeklyAIRoster().catch(err => console.warn("Background AI roster sync warning:", err));
+            } catch (err) {
+                console.warn("AI roster background error:", err);
+            }
         }
 
         function returnToLobby() {
@@ -1869,12 +1941,14 @@
         }
 
         async function fetchTeamRosterFromESPN(teamObj) {
+            if (!teamObj) return [];
             if (TEAM_ROSTER_CACHE[teamObj.id]) {
                 return TEAM_ROSTER_CACHE[teamObj.id];
             }
 
             const players = [];
 
+            // Add standard Team Defense/Special Teams unit
             players.push({
                 name: "Defense/Special Teams",
                 pos: "DST",
@@ -1887,7 +1961,14 @@
             });
 
             try {
-                const rosterRes = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/${teamObj.sport}/teams/${teamObj.id}/roster`);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout guard
+
+                const rosterRes = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/${teamObj.sport}/teams/${teamObj.id}/roster`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
                 if (rosterRes.ok) {
                     const rosterData = await rosterRes.json();
                     if (rosterData && rosterData.athletes) {
@@ -1936,7 +2017,14 @@
                     }
                 }
             } catch (err) {
-                console.warn("Roster fetch error for team:", teamObj.name, err);
+                // Graceful fallback roster if network/timeout occurs
+                players.push(
+                    { name: "Starting Quarterback", pos: "QB", team: teamObj.name, sport: teamObj.sport, logoUrl: teamObj.logoUrl, isStarter: true, isDst: false, projected: 19.5, score: 0.0, injury: "Healthy" },
+                    { name: "Lead Running Back", pos: "RB", team: teamObj.name, sport: teamObj.sport, logoUrl: teamObj.logoUrl, isStarter: true, isDst: false, projected: 16.0, score: 0.0, injury: "Healthy" },
+                    { name: "Top Receiver", pos: "WR", team: teamObj.name, sport: teamObj.sport, logoUrl: teamObj.logoUrl, isStarter: true, isDst: false, projected: 15.5, score: 0.0, injury: "Healthy" },
+                    { name: "Starting Tight End", pos: "TE", team: teamObj.name, sport: teamObj.sport, logoUrl: teamObj.logoUrl, isStarter: true, isDst: false, projected: 11.0, score: 0.0, injury: "Healthy" },
+                    { name: "Starting Kicker", pos: "K", team: teamObj.name, sport: teamObj.sport, logoUrl: teamObj.logoUrl, isStarter: true, isDst: false, projected: 8.5, score: 0.0, injury: "Healthy" }
+                );
             }
 
             TEAM_ROSTER_CACHE[teamObj.id] = players;
@@ -1944,10 +2032,11 @@
         }
 
         async function syncWeeklyAIRoster() {
+            if (!currentLeague) return;
             if (!currentLeague.aiRosters) currentLeague.aiRosters = {};
             
             const aiWeekKey = `week_${activeSlateWeek}`;
-            if (!currentLeague.aiRosters[aiWeekKey]) {
+            if (!currentLeague.aiRosters[aiWeekKey] || Object.keys(currentLeague.aiRosters[aiWeekKey]).length < 9) {
                 currentLeague.aiRosters[aiWeekKey] = await generateAIRosterFromLiveESPN();
                 saveLeaguesStorage();
             }
