@@ -2615,32 +2615,145 @@
             showToast(`Slot ${pos} cleared. ${newCount} re-spin${newCount === 1 ? '' : 's'} remaining this week.`);
         }
 
-        function updateLiveScores() {
+        async function updateLiveScores() {
             const rules = getLeagueScoringRules();
-            const roster = currentLeague.rosters[currentUser.name] || {};
-            let total = 0;
-            Object.keys(roster).forEach(pos => {
-                const p = roster[pos];
-                const simRatio = (0.75 + Math.random() * 0.6);
-                let pts = +(calculateCustomFantasyPoints(p.projected * simRatio, p.pos, rules)).toFixed(1);
-                p.score = pts;
-                total += pts;
-            });
+            showToast(`Checking live Week ${activeSlateWeek} game data...`);
 
+            // Fetch active week events for NFL & NCAA to check real game progress
+            let currentWeekEvents = [];
+            try {
+                const [nflRes, ncaaRes] = await Promise.all([
+                    fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=${activeSlateWeek}`),
+                    fetch(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=80&week=${activeSlateWeek}`)
+                ]);
+                if (nflRes.ok) {
+                    const d = await nflRes.json();
+                    if (d.events) currentWeekEvents.push(...d.events);
+                }
+                if (ncaaRes.ok) {
+                    const d = await ncaaRes.json();
+                    if (d.events) currentWeekEvents.push(...d.events);
+                }
+            } catch (e) {
+                console.warn("Unable to fetch current week scoreboards:", e);
+            }
+
+            // Helper to get active game state and score for a given player and team in current week
+            async function getPlayerCurrentWeekPoints(player) {
+                if (!player || !player.team) return 0.0;
+
+                // Find the competition for this team in the active week's scoreboard
+                const matchedEvent = currentWeekEvents.find(ev => 
+                    ev.competitions && ev.competitions[0].competitors.some(c => 
+                        c.team.displayName === player.team || c.team.name === player.team
+                    )
+                );
+
+                // If no game found in current week's schedule, or game hasn't started yet ('pre'), score is strictly 0.0
+                if (!matchedEvent) return 0.0;
+                const comp = matchedEvent.competitions[0];
+                const gameState = comp.status && comp.status.type ? comp.status.type.state : 'pre';
+
+                if (gameState === 'pre') {
+                    // Game hasn't kicked off for the current week yet — strictly 0.0
+                    return 0.0;
+                }
+
+                // If game is in-progress ('in') or completed ('post') for THIS CURRENT WEEK:
+                try {
+                    const eventId = matchedEvent.id;
+                    const sportType = player.sport || (matchedEvent.competitions[0].competitors[0].team.links ? 'college-football' : 'nfl');
+                    const summaryRes = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/${sportType}/summary?event=${eventId}`);
+                    
+                    if (summaryRes.ok) {
+                        const summaryData = await summaryRes.json();
+                        
+                        // Check team defense scoring
+                        if (player.isDst || player.pos === 'DST') {
+                            const oppComp = comp.competitors.find(c => c.team.displayName !== player.team && c.team.name !== player.team);
+                            const oppScore = oppComp ? parseInt(oppComp.score || 0, 10) : 0;
+                            
+                            // Base D/ST scoring: points allowed tier + turnovers
+                            let dstPts = 10;
+                            if (oppScore === 0) dstPts = 10;
+                            else if (oppScore <= 6) dstPts = 7;
+                            else if (oppScore <= 13) dstPts = 4;
+                            else if (oppScore <= 20) dstPts = 1;
+                            else if (oppScore <= 27) dstPts = 0;
+                            else if (oppScore <= 34) dstPts = -1;
+                            else dstPts = -4;
+
+                            return Math.max(0, calculateCustomFantasyPoints(dstPts, 'DST', rules));
+                        }
+
+                        // Search boxscore player stats for offensive athletes
+                        if (summaryData.boxscore && summaryData.boxscore.players) {
+                            for (const teamCategory of summaryData.boxscore.players) {
+                                for (const statGroup of teamCategory.statistics || []) {
+                                    for (const athlete of statGroup.athletes || []) {
+                                        if (athlete.athlete && (athlete.athlete.displayName === player.name || athlete.athlete.name === player.name)) {
+                                            // Compute points from athlete boxscore line
+                                            let pts = 0;
+                                            const statNames = statGroup.labels || [];
+                                            const statVals = athlete.stats || [];
+
+                                            statNames.forEach((lbl, idx) => {
+                                                const val = parseFloat(statVals[idx]) || 0;
+                                                const key = lbl.toUpperCase();
+                                                if (key === 'TD') pts += (player.pos === 'QB' ? val * rules.passTd : val * rules.rushRecTd);
+                                                if (key === 'YDS') pts += (player.pos === 'QB' ? val * rules.passYd : val * rules.rushRecYd);
+                                                if (key === 'REC') pts += (val * rules.ppr);
+                                                if (key === 'INT') pts += (val * rules.interception);
+                                                if (key === 'FG') pts += (val * rules.fieldGoal);
+                                            });
+
+                                            return Math.max(0, +pts.toFixed(1));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Could not parse boxscore stats for player:", player.name, err);
+                }
+
+                // If game is in progress or final but player logged 0 stats or stats aren't present yet, show 0.0
+                return 0.0;
+            }
+
+            // Update user roster for current week
+            const myRoster = currentLeague.rosters[currentUser.name] || {};
+            let hasLiveGames = false;
+
+            for (const pos of Object.keys(myRoster)) {
+                const p = myRoster[pos];
+                const livePts = await getPlayerCurrentWeekPoints(p);
+                p.score = livePts;
+                if (livePts > 0) hasLiveGames = true;
+            }
+
+            // Update AI Rival roster for current week
             const aiWeekKey = `week_${activeSlateWeek}`;
             if (currentLeague.aiRosters && currentLeague.aiRosters[aiWeekKey]) {
                 const aiRoster = currentLeague.aiRosters[aiWeekKey];
-                Object.keys(aiRoster).forEach(pos => {
+                for (const pos of Object.keys(aiRoster)) {
                     const p = aiRoster[pos];
-                    const simRatio = (0.75 + Math.random() * 0.6);
-                    const pts = +(calculateCustomFantasyPoints(p.projected * simRatio, p.pos, rules)).toFixed(1);
-                    p.score = pts;
-                });
+                    const livePts = await getPlayerCurrentWeekPoints(p);
+                    p.score = livePts;
+                    if (livePts > 0) hasLiveGames = true;
+                }
             }
 
             saveLeaguesStorage();
             renderMyTeam();
-            showToast("Live fantasy stats updated and synced!");
+            if (!document.getElementById('tab-content-matchup').classList.contains('hidden')) renderMatchup();
+
+            if (hasLiveGames) {
+                showToast(`Week ${activeSlateWeek} live stats updated!`);
+            } else {
+                showToast(`Week ${activeSlateWeek} games have not kicked off yet. All live scores remain 0.0.`);
+            }
         }
 
         function renderMatchup() {
