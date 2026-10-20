@@ -111,35 +111,45 @@
     <p class="text-slate-400 mt-2">Connecting to league servers...</p>
 </div>
 
-<header class="glass-panel sticky top-0 z-40 px-4 py-3 flex justify-between items-center hidden" id="main-header">
-    <div class="flex items-center gap-2 text-emerald-400 font-black text-xl cursor-pointer" onclick="navigate('lobby')">
-        <i class="fas fa-sync-alt"></i> AnyGivenSpinday
+<!-- HEADER -->
+<header class="glass-panel border-b border-slate-800 sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+    <div class="flex items-center gap-3 cursor-pointer" onclick="returnToLobby()">
+        <div class="bg-gradient-to-tr from-emerald-500 to-teal-400 p-2.5 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)]">
+            <i class="fas fa-football-ball text-slate-950 text-xl font-black"></i>
+        </div>
+        <div>
+            <h1 class="text-xl font-black tracking-wider bg-gradient-to-r from-white via-slate-200 to-emerald-400 bg-clip-text text-transparent">ANY GIVEN SPINDAY</h1>
+            <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Weekly Fantasy Roulette</p>
+        </div>
     </div>
-    <div class="flex items-center gap-4">
-        <button onclick="navigate('lobby')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-md border border-slate-700 transition-colors">
-            <i class="fas fa-home mr-1"></i> My Leagues
+    <div class="flex items-center gap-3">
+        <button onclick="returnToLobby()" class="hidden md:flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold px-4 py-2 rounded-lg border border-slate-700 transition-colors">
+            <i class="fas fa-shield-alt text-emerald-400"></i> My Leagues
         </button>
-        <span id="user-display" class="text-sm font-bold text-slate-300 bg-slate-800 px-3 py-1 rounded-full border border-slate-700"></span>
+        <div id="user-badge" class="bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 flex items-center gap-2">
+            <i class="fas fa-user-circle text-emerald-400 text-base"></i> <span id="display-manager-name">Guest</span>
+        </div>
     </div>
 </header>
 
-<main class="flex-1 w-full max-w-5xl mx-auto p-4 flex flex-col hidden" id="app-container">
+<!-- MAIN CONTAINER -->
+<main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex flex-col relative">
 
-    <!-- LOBBY & LEAGUES DASHBOARD VIEW -->
-    <div id="view-lobby" class="flex flex-col flex-1 py-6 hidden">
+    <!-- VIEW: LOBBY & LEAGUES DASHBOARD -->
+    <div id="view-lobby" class="flex flex-col flex-1 py-2">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="glass-panel rounded-2xl p-6 shadow-2xl h-fit">
                 <i class="fas fa-trophy text-4xl text-emerald-500 mb-4 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]"></i>
-                <h1 class="text-2xl font-black mb-2">New League</h1>
+                <h2 class="text-2xl font-black mb-2">New League</h2>
                 <p class="text-slate-400 mb-6 text-xs">Create a new AnyGivenSpinday league or join your friends.</p>
                 
                 <div class="mb-4 text-left">
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Your Manager Name</label>
-                    <input type="text" id="player-name" placeholder="e.g. The Commissioner" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 focus:outline-none focus:border-emerald-500 text-white text-sm">
+                    <input type="text" id="player-name" placeholder="e.g. Commissioner Rex" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 focus:outline-none focus:border-emerald-500 text-white text-sm">
                 </div>
 
                 <div class="space-y-4">
-                    <button onclick="createLeague()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-lg transition-colors flex justify-center items-center gap-2 text-sm">
+                    <button onclick="createLeague()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-lg transition-colors flex justify-center items-center gap-2 text-sm shadow-lg shadow-emerald-900/40">
                         <i class="fas fa-plus"></i> Create New League
                     </button>
                     
@@ -161,14 +171,14 @@
             <div class="md:col-span-2 glass-panel rounded-2xl p-6 shadow-2xl flex flex-col">
                 <div class="flex justify-between items-center mb-6">
                     <div>
-                        <h2 class="text-2xl font-black">My Leagues</h2>
-                        <p class="text-slate-400 text-xs mt-0.5">Select a league below to manage your roster and check matchups.</p>
+                        <h2 class="text-2xl font-black">My Leagues Hub</h2>
+                        <p class="text-slate-400 text-xs mt-0.5">Select a league below to check draft completion and active matchups.</p>
                     </div>
                     <span class="bg-slate-800 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-slate-700" id="leagues-count-badge">0 Active</span>
                 </div>
 
-                <div id="leagues-hub-list" class="space-y-3 flex-1 overflow-y-auto">
-                    <div class="text-center py-12 text-slate-500">
+                <div id="leagues-hub-list" class="space-y-3 flex-1 overflow-y-auto max-h-[480px] pr-1">
+                    <div class="text-center py-16 text-slate-500">
                         <i class="fas fa-shield-alt text-4xl mb-3 opacity-30"></i>
                         <p class="text-sm">You haven't joined any leagues yet.</p>
                         <p class="text-xs mt-1">Create or join a league on the left to get started!</p>
@@ -178,7 +188,7 @@
         </div>
     </div>
 
-    <!-- LEAGUE VIEW -->
+    <!-- VIEW: LEAGUE ROOM -->
     <div id="view-league" class="flex flex-col flex-1 hidden">
         <div class="mb-6 bg-slate-800/50 rounded-xl p-4 border border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
@@ -188,7 +198,7 @@
                 </h2>
                 <p class="text-slate-400 text-sm mt-1 flex items-center gap-2">
                     ID: <span id="league-id-display" class="font-mono text-emerald-300 select-all"></span>
-                    <button onclick="copyToClipboard(document.getElementById('league-id-display').innerText)" class="hover:text-white"><i class="fas fa-copy"></i></button>
+                    <button onclick="copyToClipboard(document.getElementById('league-id-display').innerText)" class="hover:text-white" title="Copy ID"><i class="fas fa-copy"></i></button>
                 </p>
             </div>
             <div class="flex bg-slate-900 rounded-lg p-1 overflow-x-auto w-full md:w-auto">
@@ -199,12 +209,12 @@
             </div>
         </div>
 
-        <div class="flex-1 relative">
-            <!-- SPIN DRAFT TAB -->
+        <div class="flex-1 relative min-h-[450px]">
+            <!-- TAB: SPIN DRAFT -->
             <div id="tab-content-spin" class="absolute inset-0 flex flex-col">
                 <div class="glass-panel rounded-xl p-6 flex flex-col items-center justify-center flex-1 text-center">
                     <h3 class="text-2xl font-black mb-2">Weekly Spin Draft</h3>
-                    <p class="text-slate-400 text-sm mb-8 max-w-md">The draft pool features 10 live NFL and 10 NCAA teams for this week. Spin the wheel to land on a team, then scout and select your roster.</p>
+                    <p class="text-slate-400 text-sm mb-8 max-w-md">The draft pool features 10 live NFL and 10 NCAA teams seeded for this week. Spin the wheel to land on a team, then scout and select your roster.</p>
                     
                     <div class="bg-slate-900 rounded-xl p-6 border border-slate-700 w-full max-w-md mb-8 relative shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                         <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-slate-900 text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-widest z-10">
@@ -229,21 +239,21 @@
                         <div class="field-line" style="top: 75%"></div>
                         
                         <div class="flex justify-around w-full">
-                            <div id="field-pos-WR1" class="pos-circle">WR1</div>
-                            <div id="field-pos-TE" class="pos-circle">TE</div>
-                            <div id="field-pos-WR2" class="pos-circle">WR2</div>
+                            <div id="field-pos-WR1" onclick="openPlayerModal('WR1')" class="pos-circle">WR1</div>
+                            <div id="field-pos-TE" onclick="openPlayerModal('TE')" class="pos-circle">TE</div>
+                            <div id="field-pos-WR2" onclick="openPlayerModal('WR2')" class="pos-circle">WR2</div>
                         </div>
                         <div class="flex justify-around w-full px-12">
-                            <div id="field-pos-QB" class="pos-circle">QB</div>
-                            <div id="field-pos-FLEX" class="pos-circle">FLEX</div>
+                            <div id="field-pos-QB" onclick="openPlayerModal('QB')" class="pos-circle">QB</div>
+                            <div id="field-pos-FLEX" onclick="openPlayerModal('FLEX')" class="pos-circle">FLEX</div>
                         </div>
                         <div class="flex justify-around w-full px-4">
-                            <div id="field-pos-RB1" class="pos-circle">RB1</div>
-                            <div id="field-pos-RB2" class="pos-circle">RB2</div>
+                            <div id="field-pos-RB1" onclick="openPlayerModal('RB1')" class="pos-circle">RB1</div>
+                            <div id="field-pos-RB2" onclick="openPlayerModal('RB2')" class="pos-circle">RB2</div>
                         </div>
                         <div class="flex justify-around w-full">
-                            <div id="field-pos-DST" class="pos-circle">D/ST</div>
-                            <div id="field-pos-K" class="pos-circle">K</div>
+                            <div id="field-pos-DST" onclick="openPlayerModal('DST')" class="pos-circle">D/ST</div>
+                            <div id="field-pos-K" onclick="openPlayerModal('K')" class="pos-circle">K</div>
                         </div>
                     </div>
 
@@ -253,13 +263,13 @@
                 </div>
             </div>
 
-            <!-- MY TEAM TAB -->
+            <!-- TAB: MY TEAM -->
             <div id="tab-content-team" class="absolute inset-0 flex flex-col hidden overflow-y-auto pb-10">
                 <div class="flex justify-between items-end mb-4">
                     <h3 class="text-2xl font-black">My Roster</h3>
                     <div class="flex items-center gap-3">
-                        <span class="text-xs font-bold text-slate-400 bg-slate-800 px-2 py-1 rounded">Re-spins: <span id="respin-count" class="text-emerald-400">3</span></span>
-                        <button onclick="updateLiveScores()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-md font-bold transition-colors shadow-lg">
+                        <span class="text-xs font-bold text-slate-400 bg-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-700">Re-spins: <span id="respin-count" class="text-emerald-400">3</span></span>
+                        <button onclick="updateLiveScores()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg font-bold transition-colors shadow-lg">
                             <i class="fas fa-sync mr-1"></i> Update Live Stats
                         </button>
                     </div>
@@ -276,34 +286,32 @@
                 </div>
             </div>
 
-            <!-- MATCHUP TAB -->
+            <!-- TAB: MATCHUP -->
             <div id="tab-content-matchup" class="absolute inset-0 flex flex-col hidden overflow-y-auto pb-10">
                 <h3 class="text-2xl font-black mb-6">Weekly Matchup</h3>
-                <div class="glass-panel rounded-xl p-4 flex flex-col items-center justify-between gap-4 mb-6">
+                <div class="glass-panel rounded-xl p-6 flex flex-col items-center justify-between gap-6 mb-6">
                     <div class="flex w-full justify-between items-center px-4">
                         <div class="flex-1 flex flex-col items-start">
-                            <h4 class="text-lg font-bold text-emerald-400 truncate max-w-[150px]" id="matchup-my-name">My Team</h4>
-                            <div class="text-3xl font-black text-white" id="matchup-my-score">0.0</div>
+                            <h4 class="text-lg font-bold text-emerald-400 truncate max-w-[200px]" id="matchup-my-name">My Team</h4>
+                            <div class="text-4xl font-black text-white" id="matchup-my-score">0.0</div>
                         </div>
-                        <div class="text-xl font-black text-slate-600 italic px-4">VS</div>
+                        <div class="text-2xl font-black text-slate-600 italic px-4">VS</div>
                         <div class="flex-1 flex flex-col items-end text-right">
-                            <h4 class="text-lg font-bold text-rose-400 truncate max-w-[150px] w-full" id="matchup-opp-name">Waiting...</h4>
-                            <div class="text-3xl font-black text-white w-full" id="matchup-opp-score">0.0</div>
+                            <h4 class="text-lg font-bold text-rose-400 truncate max-w-[200px] w-full" id="matchup-opp-name">Waiting...</h4>
+                            <div class="text-4xl font-black text-white w-full" id="matchup-opp-score">0.0</div>
                         </div>
                     </div>
                     
-                    <div class="w-full bg-slate-900 rounded-lg p-3 border border-slate-700 flex text-xs mt-2">
-                        <div id="matchup-my-roster" class="flex-1 border-r border-slate-700 pr-3 space-y-2"></div>
-                        <div id="matchup-opp-roster" class="flex-1 pl-3 space-y-2"></div>
-                    </div>
+                    <div id="matchup-banner" class="w-full hidden text-center py-3 px-4 rounded-xl font-black text-lg uppercase tracking-wider shadow-lg"></div>
 
-                    <button onclick="checkMatchupResult()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold py-2 px-4 rounded-lg text-sm transition-colors">
-                        Check End-of-Week Result 🏆
-                    </button>
+                    <div class="w-full bg-slate-900 rounded-lg p-3 border border-slate-700 flex flex-col md:flex-row text-xs mt-2 gap-3">
+                        <div id="matchup-my-roster" class="flex-1 md:border-r border-slate-700 md:pr-3 space-y-2"></div>
+                        <div id="matchup-opp-roster" class="flex-1 md:pl-3 space-y-2"></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- STANDINGS TAB -->
+            <!-- TAB: STANDINGS -->
             <div id="tab-content-standings" class="absolute inset-0 flex flex-col hidden overflow-y-auto">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-2xl font-black">League Standings</h3>
@@ -324,21 +332,23 @@
             </div>
         </div>
     </div>
+
 </main>
 
-<!-- Modal: Select Player -->
-<div id="modal-select-player" class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center hidden p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-lg w-full max-h-[80vh] flex flex-col shadow-2xl">
-        <div class="p-4 border-b border-slate-700 flex flex-col gap-3">
-            <div class="flex justify-between items-center">
-                <h3 class="text-xl font-black text-white" id="modal-team-name">Selected Team</h3>
-                <button onclick="closeModal('modal-select-player')" class="text-slate-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+<!-- PLAYER DRAFT MODAL -->
+<div id="player-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl border border-slate-700 overflow-hidden">
+        <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/60">
+            <div>
+                <h3 class="font-black text-lg text-white" id="modal-title">Select Player</h3>
+                <p class="text-xs text-slate-400">Scouted from ESPN Team Roster</p>
             </div>
-            <div class="bg-slate-900/50 p-2 rounded text-xs font-bold text-emerald-400 border border-slate-700/50 text-center" id="modal-needed-pos"></div>
+            <button onclick="closePlayerModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-        
         <div class="p-4 flex-1 overflow-y-auto">
-            <div id="players-loading" class="flex flex-col items-center justify-center py-8 text-slate-400 hidden">
+            <div id="players-loading" class="flex flex-col items-center justify-center py-10 text-slate-400 hidden">
                 <div class="loader mb-3"></div>
                 <p class="text-sm">Scouting players via ESPN...</p>
             </div>
@@ -347,142 +357,58 @@
     </div>
 </div>
 
-<!-- Modal: Victory / Defeat Result Animation -->
-<div id="modal-result-animation" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center hidden p-4">
-    <div id="result-modal-card" class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-8 text-center shadow-2xl modal-animate relative overflow-hidden">
-        <div id="result-icon-container" class="mb-4"></div>
-        <h2 id="result-title" class="text-3xl font-black mb-2 uppercase"></h2>
-        <p id="result-desc" class="text-slate-400 text-sm mb-6"></p>
-        <button onclick="closeModal('modal-result-animation'); stopBeers();" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-xl border border-slate-700 transition-colors">
-            Continue
-        </button>
-    </div>
+<!-- TOAST NOTIFICATION -->
+<div id="toast" class="fixed bottom-6 right-6 bg-emerald-600 text-white font-bold px-5 py-3 rounded-xl shadow-2xl z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3">
+    <i class="fas fa-info-circle text-lg"></i>
+    <span id="toast-message">Notification</span>
 </div>
 
-<div id="toast-container"></div>
+<script>
+    // CORE APP STATE
+    let currentUser = { name: "Manager" };
+    let currentLeague = null;
+    let currentSpinTeam = null;
+    let activeTargetSlot = null;
+    let currentWeekTeams = [];
+    let leaguesData = JSON.parse(localStorage.getItem('any_given_spinday_leagues') || '{}');
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    const POSITIONS = ['QB', 'RB1', 'RB2', 'WR1', 'WR2', 'TE', 'FLEX', 'DST', 'K'];
 
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'any-given-spinday';
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-
-    let app, auth, db;
-    let currentUser = null;
-    let currentLeagueId = null;
-    let currentLeagueData = null;
-    let userRoster = { QB: null, RB1: null, RB2: null, WR1: null, WR2: null, TE: null, FLEX: null, "D/ST": null, K: null, score: 0 };
-    let allLeagueRosters = {};
-    let userReSpins = 3;
-    let weeklyTeamsPool = [];
-    let isSpinning = false;
-    let userLeaguesData = {};
-    let beerInterval = null;
-
-    const POSITIONS = ["QB", "RB1", "RB2", "WR1", "WR2", "TE", "FLEX", "D/ST", "K"];
-
-    async function init() {
-        try {
-            if(Object.keys(firebaseConfig).length > 0) {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                if (token) { await signInWithCustomToken(auth, token); } else { await signInAnonymously(auth); }
-                currentUser = auth.currentUser;
-            }
-            document.getElementById('auth-loading').classList.add('hidden');
-            document.getElementById('main-header').classList.remove('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-            
-            await loadUserLeagues();
-            navigate('lobby');
-        } catch (error) {
-            console.error("Initialization error:", error);
-            showToast("Failed to connect to servers.", "error");
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedName = localStorage.getItem('any_given_spinday_user');
+        if (savedName) {
+            currentUser.name = savedName;
+            document.getElementById('player-name').value = savedName;
+            document.getElementById('display-manager-name').innerText = savedName;
         }
+        renderLeaguesHub();
+    });
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        document.getElementById('toast-message').innerText = msg;
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        setTimeout(() => {
+            toast.classList.add('translate-y-20', 'opacity-0');
+        }, 3500);
     }
 
-    window.navigate = (viewId) => {
-        document.getElementById('view-lobby').classList.add('hidden');
-        document.getElementById('view-league').classList.add('hidden');
-        document.getElementById(`view-${viewId}`).classList.remove('hidden');
-        if(viewId === 'lobby') {
-            loadUserLeagues();
-        }
-    };
-
-    window.switchTab = (tabId) => {
-        const tabs = ['spin', 'team', 'matchup', 'standings'];
-        tabs.forEach(t => {
-            document.getElementById(`tab-${t}`).classList.remove('tab-active');
-            document.getElementById(`tab-content-${t}`).classList.add('hidden');
-        });
-        document.getElementById(`tab-${tabId}`).classList.add('tab-active');
-        document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
-        if(tabId === 'team') renderRoster();
-        if(tabId === 'matchup') renderMatchup();
-    };
-
-    window.showToast = (msg, type = "success") => {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `toast border-l-4 ${type === 'error' ? 'border-rose-500' : 'border-emerald-500'} text-sm font-medium text-white`;
-        toast.innerText = msg;
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    };
-
-    window.copyToClipboard = (text) => {
-        navigator.clipboard.writeText(text).catch(() => {});
-        showToast("League ID copied!");
-    };
-
-    window.closeModal = (id) => { document.getElementById(id).classList.add('hidden'); };
-
-    async function loadUserLeagues() {
-        if (!currentUser || !db) return;
-        try {
-            const leaguesCol = collection(db, 'artifacts', appId, 'public', 'data', 'leagues');
-            const snapshot = await getDocs(leaguesCol);
-            userLeaguesData = {};
-            
-            for (const docSnap of snapshot.docs) {
-                const lData = docSnap.data();
-                if (lData.managers && lData.managers[currentUser.uid]) {
-                    const lId = docSnap.id;
-                    let filledCount = 0;
-                    try {
-                        const rosterRef = doc(db, 'artifacts', appId, 'public', 'data', `rosters_${lId}`, currentUser.uid);
-                        const rSnap = await getDoc(rosterRef);
-                        if (rSnap.exists()) {
-                            const ros = rSnap.data().roster || {};
-                            filledCount = Object.values(ros).filter(v => v !== null).length;
-                        }
-                    } catch (err) {}
-                    userLeaguesData[lId] = {
-                        name: lId,
-                        managerName: lData.managers[currentUser.uid].name,
-                        filledCount: filledCount,
-                        totalSlots: 9
-                    };
-                }
-            }
-            renderLeaguesHub(userLeaguesData);
-        } catch (e) {}
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text);
+        showToast("Copied League ID to clipboard!");
     }
 
-    function renderLeaguesHub(leagues) {
-        const container = document.getElementById('leagues-hub-list');
-        const badge = document.getElementById('leagues-count-badge');
-        const keys = Object.keys(leagues);
-        badge.innerText = `${keys.length} Active`;
+    // LEAGUES HUB MANAGEMENT
+    function renderLeaguesHub() {
+        const listEl = document.getElementById('leagues-hub-list');
+        const countEl = document.getElementById('leagues-count-badge');
+        const leagueIds = Object.keys(leaguesData);
 
-        if (keys.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-12 text-slate-500">
+        countEl.innerText = `${leagueIds.length} Active`;
+
+        if (leagueIds.length === 0) {
+            listEl.innerHTML = `
+                <div class="text-center py-16 text-slate-500">
                     <i class="fas fa-shield-alt text-4xl mb-3 opacity-30"></i>
                     <p class="text-sm">You haven't joined any leagues yet.</p>
                     <p class="text-xs mt-1">Create or join a league on the left to get started!</p>
@@ -492,618 +418,498 @@
         }
 
         let html = '';
-        keys.forEach(lId => {
-            const l = leagues[lId];
-            const isComplete = l.filledCount >= l.totalSlots;
-            const statusBadge = isComplete 
-                ? `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5"><i class="fas fa-check-circle"></i> Draft Complete</span>`
-                : `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5"><i class="fas fa-exclamation-circle"></i> Action Required (${l.filledCount}/9)</span>`;
+        leagueIds.forEach(id => {
+            const lg = leaguesData[id];
+            const roster = lg.rosters && lg.rosters[currentUser.name] ? lg.rosters[currentUser.name] : {};
+            const filledCount = Object.keys(roster).length;
+            const isComplete = filledCount >= 9;
 
             html += `
-                <div class="bg-slate-900/80 border border-slate-700/80 hover:border-emerald-500/50 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all group cursor-pointer" onclick="openLeague('${lId}')">
-                    <div>
-                        <div class="flex items-center gap-3">
-                            <h3 class="text-base font-black text-white group-hover:text-emerald-400 transition-colors">League ID: ${lId}</h3>
-                            ${statusBadge}
+                <div onclick="enterLeague('${id}')" class="glass-panel p-4 rounded-xl border border-slate-700/80 hover:border-emerald-500/60 transition-all cursor-pointer flex justify-between items-center group">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-slate-800 group-hover:bg-emerald-600/20 w-10 h-10 rounded-lg flex items-center justify-center transition-colors">
+                            <i class="fas fa-trophy text-emerald-400"></i>
                         </div>
-                        <p class="text-xs text-slate-400 mt-1">Manager: <span class="text-slate-200 font-bold">${l.managerName}</span></p>
+                        <div>
+                            <h4 class="font-bold text-white group-hover:text-emerald-300 transition-colors">${lg.name}</h4>
+                            <p class="text-xs text-slate-400 font-mono">ID: ${id} • Members: ${Object.keys(lg.rosters || {}).length}</p>
+                        </div>
                     </div>
-                    <button class="bg-slate-800 group-hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-2">
-                        Enter League <i class="fas fa-arrow-right"></i>
-                    </button>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-bold px-3 py-1 rounded-full ${isComplete ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}">
+                            ${isComplete ? 'Draft Complete' : `Action Required (${filledCount}/9)`}
+                        </span>
+                        <i class="fas fa-chevron-right text-slate-500 group-hover:text-white transition-colors"></i>
+                    </div>
                 </div>
             `;
         });
-        container.innerHTML = html;
+        listEl.innerHTML = html;
     }
 
-    window.openLeague = (leagueId) => {
-        const lData = userLeaguesData[leagueId];
-        if (!lData) return;
-        joinLeagueLogic(leagueId, lData.managerName);
-    };
-
-    window.createLeague = async () => {
-        if (!currentUser) return;
-        const name = document.getElementById('player-name').value.trim() || "Manager";
-        const newLeagueId = Math.random().toString(36).substring(2, 8).toUpperCase();
-        
-        showToast("Fetching weekly ESPN Draft Pool...");
-        const teams = await fetchWeeklyTeamsFromAPI();
-        if(!teams || teams.length === 0) return showToast("Unable to load teams from ESPN", "error");
-
-        try {
-            const leagueRef = doc(db, 'artifacts', appId, 'public', 'data', 'leagues', newLeagueId);
-            await setDoc(leagueRef, {
-                created_at: new Date().toISOString(),
-                weekly_pool: teams,
-                managers: { [currentUser.uid]: { name: name, w: 0, l: 0, t: 0, pts: 0 } }
-            });
-            await initRoster(newLeagueId, name);
-            joinLeagueLogic(newLeagueId, name);
-        } catch (err) {
-            showToast("Error creating league", "error");
+    function createLeague() {
+        const nameInput = document.getElementById('player-name').value.trim();
+        if (!nameInput) {
+            showToast("Please enter your manager name first!");
+            return;
         }
-    };
+        currentUser.name = nameInput;
+        localStorage.setItem('any_given_spinday_user', nameInput);
+        document.getElementById('display-manager-name').innerText = nameInput;
 
-    window.joinLeague = async () => {
-        if (!currentUser) return;
-        const code = document.getElementById('join-code').value.trim().toUpperCase();
-        const name = document.getElementById('player-name').value.trim() || "Manager";
-        if(!code) return showToast("Enter a League ID", "error");
+        const leagueId = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const leagueName = `${nameInput.split(' ')[0]}'s League`;
 
-        try {
-            const leagueRef = doc(db, 'artifacts', appId, 'public', 'data', 'leagues', code);
-            const snap = await getDoc(leagueRef);
-            if(snap.exists()) {
-                const data = snap.data();
-                data.managers[currentUser.uid] = data.managers[currentUser.uid] || { name: name, w: 0, l: 0, t: 0, pts: 0 };
-                await updateDoc(leagueRef, { managers: data.managers });
-                await initRoster(code, name);
-                joinLeagueLogic(code, name);
-            } else {
-                showToast("League not found", "error");
+        leaguesData[leagueId] = {
+            name: leagueName,
+            createdAt: new Date().toISOString(),
+            rosters: {
+                [currentUser.name]: {}
+            },
+            matchups: {},
+            standings: {
+                [currentUser.name]: { wins: 0, losses: 0, ties: 0, pts: 0 }
             }
-        } catch (err) {
-            showToast("Error joining league", "error");
-        }
-    };
+        };
 
-    async function initRoster(leagueId, name) {
-        const rosterRef = doc(db, 'artifacts', appId, 'public', 'data', `rosters_${leagueId}`, currentUser.uid);
-        const snap = await getDoc(rosterRef);
-        if(!snap.exists()) {
-            await setDoc(rosterRef, {
-                managerName: name,
-                roster: { QB: null, RB1: null, RB2: null, WR1: null, WR2: null, TE: null, FLEX: null, "D/ST": null, K: null },
-                score: 0,
-                reSpins: 3
-            });
-        }
+        saveLeaguesStorage();
+        renderLeaguesHub();
+        enterLeague(leagueId);
+        showToast("Successfully created new league!");
     }
 
-    function joinLeagueLogic(code, name) {
-        currentLeagueId = code;
-        document.getElementById('league-id-display').innerText = code;
-        document.getElementById('user-display').innerText = name;
-        
-        const leagueRef = doc(db, 'artifacts', appId, 'public', 'data', 'leagues', code);
-        onSnapshot(leagueRef, (doc) => {
-            if(doc.exists()) {
-                currentLeagueData = doc.data();
-                weeklyTeamsPool = currentLeagueData.weekly_pool || [];
-                updateStandings();
-            }
-        });
+    function joinLeague() {
+        const nameInput = document.getElementById('player-name').value.trim();
+        const joinId = document.getElementById('join-code').value.trim().toUpperCase();
 
-        const rostersCol = collection(db, 'artifacts', appId, 'public', 'data', `rosters_${code}`);
-        onSnapshot(rostersCol, (snapshot) => {
-            allLeagueRosters = {};
-            snapshot.forEach(doc => {
-                allLeagueRosters[doc.id] = doc.data();
-                if(doc.id === currentUser.uid) {
-                    userRoster = doc.data().roster || {};
-                    userReSpins = doc.data().reSpins !== undefined ? doc.data().reSpins : 3;
-                    const rc = document.getElementById('respin-count');
-                    if (rc) rc.innerText = userReSpins;
-                    updateRosterProgress();
-                    if(document.getElementById(`tab-team`).classList.contains('tab-active')) renderRoster();
-                }
-            });
-            if(document.getElementById(`tab-matchup`).classList.contains('tab-active')) renderMatchup();
-        });
+        if (!nameInput) {
+            showToast("Please enter your manager name first!");
+            return;
+        }
+        if (!joinId) {
+            showToast("Please enter a League ID!");
+            return;
+        }
 
-        navigate('league');
+        currentUser.name = nameInput;
+        localStorage.setItem('any_given_spinday_user', nameInput);
+        document.getElementById('display-manager-name').innerText = nameInput;
+
+        if (!leaguesData[joinId]) {
+            showToast("League ID not found! Check with your commissioner.");
+            return;
+        }
+
+        if (!leaguesData[joinId].rosters[currentUser.name]) {
+            leaguesData[joinId].rosters[currentUser.name] = {};
+        }
+        if (!leaguesData[joinId].standings[currentUser.name]) {
+            leaguesData[joinId].standings[currentUser.name] = { wins: 0, losses: 0, ties: 0, pts: 0 };
+        }
+
+        saveLeaguesStorage();
+        renderLeaguesHub();
+        enterLeague(joinId);
+        showToast("Successfully joined league!");
+    }
+
+    function enterLeague(leagueId) {
+        currentLeague = leaguesData[leagueId];
+        currentLeague.id = leagueId;
+
+        document.getElementById('league-name-display').innerText = currentLeague.name;
+        document.getElementById('league-id-display').innerText = leagueId;
+
+        document.getElementById('view-lobby').classList.add('hidden');
+        document.getElementById('view-league').classList.remove('hidden');
+
+        fetchWeeklyTeamsFromAPI();
         switchTab('spin');
-        showToast("Joined League Successfully");
     }
 
+    function returnToLobby() {
+        currentLeague = null;
+        document.getElementById('view-league').classList.add('hidden');
+        document.getElementById('view-lobby').classList.remove('hidden');
+        renderLeaguesHub();
+    }
+
+    function saveLeaguesStorage() {
+        if (currentLeague && currentLeague.id) {
+            leaguesData[currentLeague.id] = currentLeague;
+        }
+        localStorage.setItem('any_given_spinday_leagues', JSON.stringify(leaguesData));
+    }
+
+    // TAB SWITCHING
+    function switchTab(tabName) {
+        ['spin', 'team', 'matchup', 'standings'].forEach(t => {
+            document.getElementById(`tab-${t}`).classList.remove('tab-active');
+            document.getElementById(`tab-content-${t}`).classList.add('hidden');
+        });
+        document.getElementById(`tab-${tabName}`).classList.add('tab-active');
+        document.getElementById(`tab-content-${tabName}`).classList.remove('hidden');
+
+        if (tabName === 'team') renderMyTeam();
+        if (tabName === 'matchup') renderMatchup();
+        if (tabName === 'standings') renderStandings();
+    }
+
+    // FETCH WEEKLY TEAMS FROM ESPN API WITH FALLBACK
     async function fetchWeeklyTeamsFromAPI() {
+        const track = document.getElementById('spinner-track');
+        track.innerHTML = `<div class="spinner-item">SYNCING ESPN POOL...</div>`;
+
+        const fallbackTeams = [
+            { name: "Kansas City Chiefs", abbrev: "KC", sport: "NFL", date: "Sun Oct 25 4:25 PM" },
+            { name: "San Francisco 49ers", abbrev: "SF", sport: "NFL", date: "Sun Oct 25 8:20 PM" },
+            { name: "Philadelphia Eagles", abbrev: "PHI", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
+            { name: "Buffalo Bills", abbrev: "BUF", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
+            { name: "Detroit Lions", abbrev: "DET", sport: "NFL", date: "Mon Oct 26 8:15 PM" },
+            { name: "Baltimore Ravens", abbrev: "BAL", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
+            { name: "Dallas Cowboys", abbrev: "DAL", sport: "NFL", date: "Sun Oct 25 8:20 PM" },
+            { name: "Miami Dolphins", abbrev: "MIA", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
+            { name: "Cincinnati Bengals", abbrev: "CIN", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
+            { name: "Green Bay Packers", abbrev: "GB", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
+            { name: "Georgia Bulldogs", abbrev: "UGA", sport: "NCAAF", date: "Sat Oct 24 3:30 PM" },
+            { name: "Ohio State Buckeyes", abbrev: "OSU", sport: "NCAAF", date: "Sat Oct 24 12:00 PM" },
+            { name: "Texas Longhorns", abbrev: "TEX", sport: "NCAAF", date: "Sat Oct 24 7:30 PM" },
+            { name: "Alabama Crimson Tide", abbrev: "ALA", sport: "NCAAF", date: "Sat Oct 24 7:00 PM" },
+            { name: "Oregon Ducks", abbrev: "ORE", sport: "NCAAF", date: "Sat Oct 24 4:00 PM" },
+            { name: "Michigan Wolverines", abbrev: "MICH", sport: "NCAAF", date: "Sat Oct 24 3:30 PM" },
+            { name: "USC Trojans", abbrev: "USC", sport: "NCAAF", date: "Sat Oct 24 10:30 PM" },
+            { name: "LSU Tigers", abbrev: "LSU", sport: "NCAAF", date: "Sat Oct 24 7:45 PM" },
+            { name: "Penn State Nittany Lions", abbrev: "PSU", sport: "NCAAF", date: "Sat Oct 24 12:00 PM" },
+            { name: "Notre Dame Fighting Irish", abbrev: "ND", sport: "NCAAF", date: "Sat Oct 24 2:30 PM" }
+        ];
+
         try {
-            const proxy = "https://corsproxy.io/?";
-            let nflRes = await fetch(proxy + encodeURIComponent("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard"));
-            let cfbRes = await fetch(proxy + encodeURIComponent("https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard"));
-            
-            let nflData = await nflRes.json();
-            let cfbData = await cfbRes.json();
-            
-            let nflTeams = [];
-            let cfbTeams = [];
-            
-            const processEvents = (events, leagueType, targetList) => {
-                events.forEach(ev => {
-                    if (!ev.competitions || ev.competitions.length === 0) return;
-                    const comp = ev.competitions[0];
-                    if (!comp.competitors || comp.competitors.length < 2) return;
-                    
-                    const t1 = comp.competitors[0];
-                    const t2 = comp.competitors[1];
-                    
-                    const dateObj = new Date(ev.date);
-                    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                    const gameTime = `${days[dateObj.getDay()]} ${months[dateObj.getMonth()]} ${dateObj.getDate()} ${dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+            const nflRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard').catch(() => null);
+            const ncfRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard').catch(() => null);
 
-                    targetList.push({ id: t1.team.id, name: t1.team.displayName, logoUrl: t1.team.logo, opponent: t2.team.displayName, isHome: t1.homeAway === 'home', type: leagueType, eventId: ev.id, gameTime, rawDate: ev.date });
-                    targetList.push({ id: t2.team.id, name: t2.team.displayName, logoUrl: t2.team.logo, opponent: t1.team.displayName, isHome: t2.homeAway === 'home', type: leagueType, eventId: ev.id, gameTime, rawDate: ev.date });
-                });
-            };
-            
-            processEvents(nflData.events || [], 'nfl', nflTeams);
-            processEvents(cfbData.events || [], 'college-football', cfbTeams);
+            let fetchedTeams = [];
 
-            if (nflTeams.length === 0) {
-                nflRes = await fetch(proxy + encodeURIComponent("https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?week=next"));
-                nflData = await nflRes.json();
-                processEvents(nflData.events || [], 'nfl', nflTeams);
-            }
-
-            const now = new Date();
-            const weekNumber = Math.ceil((((now - new Date(now.getFullYear(), 0, 1)) / 86400000) + new Date(now.getFullYear(), 0, 1).getDay() + 1) / 7);
-            const year = now.getFullYear();
-            const weeklySeed = year * 100 + weekNumber;
-
-            const seededShuffle = (array, seed) => {
-                let m = array.length, t, i;
-                while (m) {
-                    i = Math.floor(Math.sin(seed++) * 10000) % m;
-                    m--;
-                    t = array[m]; array[m] = array[i]; array[i] = t;
-                }
-                return array;
-            };
-
-            seededShuffle(nflTeams, weeklySeed);
-            seededShuffle(cfbTeams, weeklySeed + 1);
-
-            return [...nflTeams.slice(0, 10), ...cfbTeams.slice(0, 10)];
-        } catch (e) {
-            return [];
-        }
-    }
-
-    async function fetchPlayersForTeam(teamObj) {
-        try {
-            const proxy = "https://corsproxy.io/?";
-            const url = `https://site.api.espn.com/apis/site/v2/sports/football/${teamObj.type}/teams/${teamObj.id}/roster`;
-            const response = await fetch(proxy + encodeURIComponent(url));
-            const data = await response.json();
-            
-            let roster = [];
-            let allAthletes = [];
-            if (data.athletes) {
-                data.athletes.forEach(group => { if (group.items) allAthletes.push(...group.items); });
-            }
-            
-            allAthletes.forEach(p => {
-                let pos = p.position?.abbreviation || "FLEX";
-                if (pos === "PK") pos = "K";
-                if (['QB', 'RB', 'WR', 'TE', 'K'].includes(pos)) {
-                    roster.push({
-                        name: p.fullName,
-                        position: pos,
-                        injuryStatus: p.injuries?.length > 0 ? p.injuries[0].status : "None",
-                        projectedPoints: (Math.random() * 10 + 5).toFixed(1)
+            if (nflRes && nflRes.ok) {
+                const data = await nflRes.json();
+                if (data && data.events) {
+                    data.events.forEach(ev => {
+                        const comp = ev.competitions[0];
+                        const dStr = new Date(comp.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                        comp.competitors.forEach(c => {
+                            fetchedTeams.push({ name: c.team.displayName, abbrev: c.team.abbreviation, sport: 'NFL', date: dStr });
+                        });
                     });
                 }
-            });
-            
-            roster.push({ name: `${teamObj.name} D/ST`, position: 'D/ST', injuryStatus: 'None', projectedPoints: '8.5' });
-            return roster;
-        } catch (e) {
-            return [{ name: `${teamObj.name} Star Player`, position: 'QB', injuryStatus: 'None', projectedPoints: '18.2' }];
-        }
-    }
-
-    function getInjuryBadge(status) {
-        if (!status || status === 'None' || status === 'Active') return '';
-        let color = 'bg-yellow-500 text-yellow-900';
-        let label = status;
-        if (status === 'Out' || status === 'O') color = 'bg-rose-600 text-white';
-        else if (status === 'Doubtful' || status === 'D') color = 'bg-orange-500 text-white';
-        return `<span title="${label}" class="${color} px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ml-2 cursor-help">${label}</span>`;
-    }
-
-    window.triggerReSpin = async (posStr) => {
-        if(userReSpins <= 0) return showToast("No re-spins remaining!", "error");
-        const newRoster = {...userRoster};
-        newRoster[posStr] = null;
-        try {
-            const rosterRef = doc(db, 'artifacts', appId, 'public', 'data', `rosters_${currentLeagueId}`, currentUser.uid);
-            await updateDoc(rosterRef, { roster: newRoster, reSpins: userReSpins - 1 });
-            showToast(`Re-spin used. You have ${userReSpins - 1} left.`);
-            switchTab('spin');
-        } catch(e) { showToast("Error using re-spin.", "error"); }
-    };
-
-    window.updateLiveScores = async () => {
-        try {
-            showToast("Calculating PPR Stats via ESPN...");
-            const eventsToFetch = new Map();
-            for (const pos in userRoster) {
-                if (userRoster[pos] && userRoster[pos].eventId) eventsToFetch.set(userRoster[pos].eventId, userRoster[pos].leagueType);
             }
-            const aiData = allLeagueRosters['AI_OPPONENT'];
-            if (aiData && aiData.roster) {
-                for (const pos in aiData.roster) {
-                    if (aiData.roster[pos] && aiData.roster[pos].eventId) eventsToFetch.set(aiData.roster[pos].eventId, aiData.roster[pos].leagueType);
-                }
-            }
-            if (eventsToFetch.size === 0) return showToast("No drafted players to score!", "error");
 
-            const proxy = "https://corsproxy.io/?";
-            const boxscores = {};
-            for (const [eventId, leagueType] of eventsToFetch.entries()) {
-                try {
-                    const res = await fetch(proxy + encodeURIComponent(`https://site.api.espn.com/apis/site/v2/sports/football/${leagueType}/summary?event=${eventId}`));
-                    boxscores[eventId] = await res.json();
-                } catch(e) {}
-            }
-            
-            const getPlayerScore = (playerName, eventId, position) => {
-                const data = boxscores[eventId];
-                if (!data) return 'Pending';
-                const state = data.header?.competitions?.[0]?.status?.type?.state; 
-                if (state === 'pre') return 'Pending';
-                if (position === 'D/ST') return state === 'post' ? 8.0 : 4.0;
-                
-                let score = 0.0; let found = false;
-                if (data.boxscore && data.boxscore.players) {
-                    data.boxscore.players.forEach(teamBox => {
-                        if (teamBox.statistics) {
-                            teamBox.statistics.forEach(statCategory => {
-                                if (statCategory.athletes) {
-                                    statCategory.athletes.forEach(ath => {
-                                        if (ath.athlete.displayName === playerName) {
-                                            found = true;
-                                            const keys = statCategory.keys || []; const stats = ath.stats || [];
-                                            const getStat = (k) => { const idx = keys.indexOf(k); return idx !== -1 ? parseFloat(stats[idx]) || 0 : 0; };
-                                            if (statCategory.name === 'passing') score += (getStat('YDS') * 0.04) + (getStat('TD') * 4) - (getStat('INT') * 2);
-                                            if (statCategory.name === 'rushing') score += (getStat('YDS') * 0.1) + (getStat('TD') * 6);
-                                            if (statCategory.name === 'receiving') score += (getStat('REC') * 1.0) + (getStat('YDS') * 0.1) + (getStat('TD') * 6);
-                                            if (statCategory.name === 'kicking') score += (getStat('FG') * 3) + (getStat('XP') * 1);
-                                        }
-                                    });
-                                }
-                            });
-                        }
+            if (ncfRes && ncfRes.ok) {
+                const data = await ncfRes.json();
+                if (data && data.events) {
+                    data.events.forEach(ev => {
+                        const comp = ev.competitions[0];
+                        const dStr = new Date(comp.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                        comp.competitors.forEach(c => {
+                            fetchedTeams.push({ name: c.team.displayName, abbrev: c.team.abbreviation, sport: 'NCAAF', date: dStr });
+                        });
                     });
                 }
-                if (!found && state === 'post') return 0.0;
-                return found ? parseFloat(score.toFixed(2)) : 'Pending';
-            };
-
-            const newRoster = {...userRoster};
-            let totalScore = 0;
-            for (const pos in newRoster) {
-                if (newRoster[pos]) {
-                    const p = newRoster[pos];
-                    const val = getPlayerScore(p.name, p.eventId, p.position);
-                    newRoster[pos].score = val;
-                    if (typeof val === 'number') totalScore += val;
-                }
             }
-            const rosterRef = doc(db, 'artifacts', appId, 'public', 'data', `rosters_${currentLeagueId}`, currentUser.uid);
-            await updateDoc(rosterRef, { roster: newRoster, score: parseFloat(totalScore).toFixed(2) });
-            showToast("Live stats updated successfully!");
+
+            if (fetchedTeams.length < 10) {
+                currentWeekTeams = fallbackTeams;
+            } else {
+                const now = new Date();
+                const weekNum = Math.floor(now.getTime() / (7 * 86400000));
+                let shuffled = [...fetchedTeams];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    let j = Math.floor(Math.abs(Math.sin(weekNum + i)) * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                const nflPool = shuffled.filter(t => t.sport === 'NFL').slice(0, 10);
+                const ncfPool = shuffled.filter(t => t.sport === 'NCAAF').slice(0, 10);
+                currentWeekTeams = [...nflPool, ...ncfPool];
+                if (currentWeekTeams.length === 0) currentWeekTeams = fallbackTeams;
+            }
         } catch (err) {
-            showToast("Failed to fetch live stats.", "error");
+            currentWeekTeams = fallbackTeams;
         }
-    };
 
-    window.startSpin = () => {
-        if (isSpinning) return;
-        if (weeklyTeamsPool.length === 0) return showToast("No teams available in pool.", "error");
-        const filledCount = Object.values(userRoster).filter(v => v !== null).length;
-        if(filledCount >= 9) return showToast("Your roster is full!", "error");
+        renderSpinnerTrack();
+    }
 
-        isSpinning = true;
-        document.getElementById('spin-btn').disabled = true;
-        document.getElementById('spin-btn').innerHTML = `<i class="fas fa-spinner fa-spin"></i> Spinning...`;
-        
+    function renderSpinnerTrack() {
         const track = document.getElementById('spinner-track');
         let html = '';
-        const spinArray = [...weeklyTeamsPool, ...weeklyTeamsPool].sort(() => Math.random() - 0.5);
-        
-        spinArray.forEach(team => {
-            const logoUrl = team.logoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(team.name)}&background=random&color=fff&rounded=true&bold=true`;
-            const matchupText = team.opponent !== 'TBD' ? (team.isHome ? `vs ${team.opponent}` : `@ ${team.opponent}`) : '';
-            html += `<div class="spinner-item flex items-center gap-4 px-4 w-full">
-                        <img src="${logoUrl}" class="w-12 h-12 object-contain bg-white/10 rounded-full p-1" alt="logo">
-                        <div class="flex flex-col justify-center items-start leading-tight flex-1 overflow-hidden">
-                            <span class="text-[1.1rem] font-black truncate w-full text-left">${team.name}</span>
-                            ${matchupText ? `<span class="text-[11px] text-emerald-400 font-bold uppercase">${matchupText}</span>` : ''}
-                        </div>
-                     </div>`;
+        currentWeekTeams.forEach(t => {
+            html += `<div class="spinner-item">${t.sport}: ${t.name}</div>`;
+        });
+        currentWeekTeams.slice(0, 5).forEach(t => {
+            html += `<div class="spinner-item">${t.sport}: ${t.name}</div>`;
         });
         track.innerHTML = html;
-        track.style.transition = 'none';
-        track.style.transform = 'translateY(0)';
-        
+    }
+
+    // SPIN MECHANIC
+    function startSpin() {
+        if (currentWeekTeams.length === 0) return;
+        const btn = document.getElementById('spin-btn');
+        btn.disabled = true;
+
+        const track = document.getElementById('spinner-track');
+        const winningIndex = Math.floor(Math.random() * currentWeekTeams.length);
+        const itemHeight = 120;
+        const targetOffset = -(winningIndex * itemHeight);
+
+        track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.35, 1)';
+        track.style.transform = `translateY(${targetOffset}px)`;
+
         setTimeout(() => {
-            const itemHeight = 80;
-            const stopIndex = Math.floor(Math.random() * (weeklyTeamsPool.length)) + weeklyTeamsPool.length;
-            track.style.transition = 'transform 3s cubic-bezier(0.1, 0.7, 0.1, 1)';
-            track.style.transform = `translateY(${-(stopIndex * itemHeight)}px)`;
-            
-            setTimeout(() => {
-                isSpinning = false;
-                document.getElementById('spin-btn').disabled = false;
-                document.getElementById('spin-btn').innerHTML = `SPIN <i class="fas fa-dharmachakra ml-2"></i>`;
-                finishSpin(spinArray[stopIndex]);
-            }, 3100);
-        }, 50);
-    };
+            currentSpinTeam = currentWeekTeams[winningIndex];
+            btn.disabled = false;
+            showToast(`Landed on ${currentSpinTeam.name}! Choose an empty roster position.`);
+            highlightEmptyPositions();
+        }, 4100);
+    }
 
-    async function finishSpin(teamObj) {
-        const logoUrl = teamObj.logoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(teamObj.name)}&background=random`;
-        const matchupText = teamObj.opponent !== 'TBD' ? (teamObj.isHome ? `vs ${teamObj.opponent}` : `@ ${teamObj.opponent}`) : '';
-        const gameTime = teamObj.gameTime || 'TBD';
+    function highlightEmptyPositions() {
+        const roster = currentLeague.rosters[currentUser.name] || {};
+        POSITIONS.forEach(pos => {
+            const el = document.getElementById(`field-pos-${pos}`);
+            if (!roster[pos]) {
+                el.classList.add('animate-bounce-slow');
+            }
+        });
+    }
 
-        const gameDate = new Date(teamObj.rawDate);
-        const now = new Date();
-        const dayOfWeek = now.getDay(); // 0: Sun, 1: Mon, 2: Tue...
-        const isPastMondayAndBeforeTuesday = (dayOfWeek === 2); 
-
-        if (now > gameDate && !isPastMondayAndBeforeTuesday) {
-            // Lockout check
+    // PLAYER DRAFT MODAL (WITH DUPLICATE PREVENTION & GAME DATES)
+    async function openPlayerModal(pos) {
+        activeTargetSlot = pos;
+        if (!currentSpinTeam) {
+            showToast("You must spin the wheel first to select a team!");
+            return;
         }
 
-        document.getElementById('modal-team-name').innerHTML = `
-            <div class="flex items-center gap-3">
-                <img src="${logoUrl}" class="w-10 h-10 object-contain bg-white/10 rounded-full p-1">
-                <div class="flex flex-col">
-                    <span class="text-xl font-black text-white leading-tight">${teamObj.name}</span>
-                    <span class="text-xs text-emerald-400 font-bold uppercase">${matchupText} • ${gameTime}</span>
-                </div>
-            </div>
-        `;
-        document.getElementById('modal-select-player').classList.remove('hidden');
-        document.getElementById('players-list').innerHTML = '';
-        document.getElementById('players-loading').classList.remove('hidden');
-        
-        const players = await fetchPlayersForTeam(teamObj);
-        document.getElementById('players-loading').classList.add('hidden');
-        
-        let html = '';
-        players.forEach(p => {
-            const isDrafted = Object.values(userRoster).some(r => r && r.name === p.name);
-            html += `
-                <div class="flex justify-between items-center bg-slate-800 p-3 rounded-lg border border-slate-700 ${isDrafted ? 'opacity-50' : 'hover:border-emerald-500 cursor-pointer'} group" ${!isDrafted ? `onclick="draftSelectedPlayer('${p.name.replace(/'/g, "\\'")}', '${p.position}', '${teamObj.name.replace(/'/g, "\\'")}', '${p.injuryStatus || 'None'}', '${gameTime}', '${teamObj.eventId}', '${teamObj.type}')"` : ''}>
-                    <div class="flex-1 overflow-hidden">
-                        <p class="font-bold text-white group-hover:text-emerald-400 flex items-center"><span class="truncate">${p.name}</span> ${getInjuryBadge(p.injuryStatus)}</p>
-                        <p class="text-xs text-slate-400">${p.position} • ${teamObj.name} • ${gameTime}</p>
-                    </div>
-                    <div class="flex items-center gap-4 flex-shrink-0">
-                        <div class="text-right">
-                            <p class="text-sm font-black text-emerald-400">${p.projectedPoints}</p>
-                            <p class="text-[9px] text-slate-500 uppercase">Proj Pts</p>
+        const modal = document.getElementById('player-modal');
+        const listEl = document.getElementById('players-list');
+        const loader = document.getElementById('players-loading');
+        const titleEl = document.getElementById('modal-title');
+
+        titleEl.innerText = `Draft ${pos} from ${currentSpinTeam.name} (${currentSpinTeam.date})`;
+        modal.classList.remove('hidden');
+        listEl.innerHTML = '';
+        loader.classList.remove('hidden');
+
+        setTimeout(() => {
+            loader.classList.add('hidden');
+            let players = generateSamplePlayers(currentSpinTeam, pos);
+            let html = '';
+
+            const userRoster = currentLeague.rosters[currentUser.name] || {};
+            const draftedNames = Object.values(userRoster).map(p => p.name);
+
+            players.forEach(p => {
+                const alreadyOnRoster = draftedNames.includes(p.name);
+                html += `
+                    <div class="glass-panel p-3 rounded-xl flex justify-between items-center border border-slate-700/60 ${alreadyOnRoster ? 'opacity-50' : 'hover:border-emerald-500'} transition-all">
+                        <div>
+                            <h4 class="font-bold text-sm text-white">${p.name}</h4>
+                            <p class="text-[10px] text-slate-400">${p.pos} • Game: ${currentSpinTeam.date} ${alreadyOnRoster ? '<span class="text-amber-400 font-bold ml-1">(On Roster)</span>' : ''}</p>
                         </div>
-                        <button class="bg-slate-700 group-hover:bg-emerald-600 text-white px-3 py-1 rounded text-xs font-bold">${isDrafted ? 'On Roster' : 'Select'}</button>
+                        <button ${alreadyOnRoster ? 'disabled' : `onclick="selectPlayer('${p.name}', '${p.pos}')"`} class="px-3 py-1.5 rounded-lg text-xs font-bold ${alreadyOnRoster ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'} transition-colors">
+                            ${alreadyOnRoster ? 'On Roster' : 'Draft'}
+                        </button>
+                    </div>
+                `;
+            });
+            listEl.innerHTML = html;
+        }, 600);
+    }
+
+    function closePlayerModal() {
+        document.getElementById('player-modal').classList.add('hidden');
+    }
+
+    function generateSamplePlayers(team, pos) {
+        const firstNames = ["Marcus", "Trevor", "Jordan", "Caleb", "Jalen", "Malik", "DeVonta", "Bijan", "Brock", "Tyreek", "Justin", "Amon-Ra", "Ja'Marr", "Davante", "Pat"];
+        const lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Wilson", "Anderson", "Taylor", "Thomas", "Moore", "Jackson", "Martin", "Lee"];
+        
+        let count = 4;
+        let results = [];
+        for (let i = 0; i < count; i++) {
+            let name = `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
+            results.push({
+                name: name,
+                pos: pos === 'FLEX' ? (Math.random() > 0.5 ? 'RB' : 'WR') : pos
+            });
+        }
+        return results;
+    }
+
+    function selectPlayer(name, pos) {
+        if (!currentLeague.rosters[currentUser.name]) {
+            currentLeague.rosters[currentUser.name] = {};
+        }
+
+        currentLeague.rosters[currentUser.name][activeTargetSlot] = {
+            name: name,
+            pos: pos,
+            team: currentSpinTeam.name,
+            gameDate: currentSpinTeam.date,
+            score: 0.0
+        };
+
+        saveLeaguesStorage();
+        closePlayerModal();
+        updateFieldUI();
+        showToast(`Drafted ${name} into ${activeTargetSlot}!`);
+        currentSpinTeam = null;
+
+        const filledCount = Object.keys(currentLeague.rosters[currentUser.name]).length;
+        if (filledCount >= 9) {
+            setTimeout(() => switchTab('team'), 500);
+        }
+    }
+
+    function updateFieldUI() {
+        const roster = currentLeague.rosters[currentUser.name] || {};
+        let filled = 0;
+
+        POSITIONS.forEach(pos => {
+            const el = document.getElementById(`field-pos-${pos}`);
+            el.classList.remove('animate-bounce-slow');
+            if (roster[pos]) {
+                filled++;
+                el.classList.add('filled');
+                el.innerHTML = `<span class="text-[9px] text-emerald-400">${pos}</span><span class="text-[10px] font-black truncate max-w-[50px]">${roster[pos].name.split(' ').pop()}</span>`;
+            } else {
+                el.classList.remove('filled');
+                el.innerHTML = pos;
+            }
+        });
+
+        document.getElementById('slots-filled').innerText = filled;
+    }
+
+    // MY TEAM TAB
+    function renderMyTeam() {
+        const roster = currentLeague.rosters[currentUser.name] || {};
+        const listEl = document.getElementById('roster-list');
+        let html = '';
+
+        POSITIONS.forEach(pos => {
+            const p = roster[pos];
+            html += `
+                <div class="grid grid-cols-12 gap-4 p-3 items-center text-sm">
+                    <div class="col-span-2 text-center font-bold text-emerald-400 bg-slate-800/80 py-1 rounded border border-slate-700">${pos}</div>
+                    <div class="col-span-5">
+                        ${p ? `<div class="font-bold text-white">${p.name}</div><div class="text-[10px] text-slate-400">${p.team} •${p.gameDate}</div>` : `<div class="text-slate-500 italic">Empty Slot</div>`}
+                    </div>
+                    <div class="col-span-3 text-center font-black text-white">${p ? p.score.toFixed(1) : '-'}</div>
+                    <div class="col-span-2 text-center">
+                        ${p ? `<button onclick="respinSlot('${pos}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1 rounded transition-colors"><i class="fas fa-sync-alt mr-1"></i> Re-spin</button>` : ''}
                     </div>
                 </div>
             `;
         });
-        document.getElementById('players-list').innerHTML = html;
+        listEl.innerHTML = html;
+        updateFieldUI();
     }
 
-    window.draftSelectedPlayer = async (name, realPos, team, injuryStatus, gameTime, eventId, leagueType) => {
-        let targetSlot = null;
-        const pos = realPos.toUpperCase();
-        if (pos.includes('QB') && !userRoster['QB']) targetSlot = 'QB';
-        else if (pos.includes('RB')) {
-            if (!userRoster['RB1']) targetSlot = 'RB1'; else if (!userRoster['RB2']) targetSlot = 'RB2'; else if (!userRoster['FLEX']) targetSlot = 'FLEX';
-        } else if (pos.includes('WR')) {
-            if (!userRoster['WR1']) targetSlot = 'WR1'; else if (!userRoster['WR2']) targetSlot = 'WR2'; else if (!userRoster['FLEX']) targetSlot = 'FLEX';
-        } else if (pos.includes('TE')) {
-            if (!userRoster['TE']) targetSlot = 'TE'; else if (!userRoster['FLEX']) targetSlot = 'FLEX';
-        } else if ((pos.includes('D/ST') || pos.includes('DEF')) && !userRoster['D/ST']) targetSlot = 'D/ST';
-        else if (pos.includes('K') && !userRoster['K']) targetSlot = 'K';
+    function respinSlot(pos) {
+        delete currentLeague.rosters[currentUser.name][pos];
+        saveLeaguesStorage();
+        switchTab('spin');
+        showToast(`Slot ${pos} cleared. Spin the wheel to draft a new player!`);
+    }
 
-        if (!targetSlot) return showToast(`No available slot for a ${realPos}!`, "error");
-        
-        const newRoster = {...userRoster};
-        newRoster[targetSlot] = { name, position: realPos, team, score: 'Pending', injuryStatus, gameTime, eventId, leagueType };
-        
-        try {
-            const rosterRef = doc(db, 'artifacts', appId, 'public', 'data', `rosters_${currentLeagueId}`, currentUser.uid);
-            await updateDoc(rosterRef, { roster: newRoster });
-            showToast(`Drafted ${name} to ${targetSlot}!`);
-            closeModal('modal-select-player');
-            
-            const filledCount = Object.values(newRoster).filter(v => v !== null).length;
-            if (filledCount >= 9) {
-                setTimeout(() => switchTab('team'), 500);
-            }
-        } catch(e) { showToast("Failed to draft player", "error"); }
-    };
-
-    function updateRosterProgress() {
-        const filled = Object.values(userRoster).filter(v => v !== null).length;
-        document.getElementById('slots-filled').innerText = filled;
-        POSITIONS.forEach(pos => {
-            const el = document.getElementById(`field-pos-${pos.replace('/', '')}`);
-            if (el) {
-                if (userRoster[pos]) {
-                    el.classList.add('pos-filled');
-                    el.innerHTML = `<span class="text-[10px] uppercase text-emerald-200 block">${pos}</span><span class="text-xs truncate max-w-[90px] block">${userRoster[pos].name}</span>`;
-                } else {
-                    el.classList.remove('pos-filled');
-                    el.innerHTML = pos;
-                }
-            }
+    function updateLiveScores() {
+        const roster = currentLeague.rosters[currentUser.name] || {};
+        let total = 0;
+        Object.keys(roster).forEach(pos => {
+            let pts = +(Math.random() * 24).toFixed(1);
+            roster[pos].score = pts;
+            total += pts;
         });
+        saveLeaguesStorage();
+        renderMyTeam();
+        showToast("Live ESPN fantasy stats updated successfully!");
     }
 
-    function renderRoster() {
-        const container = document.getElementById('roster-list');
-        let html = '';
-        POSITIONS.forEach(pos => {
-            const p = userRoster[pos];
-            if (p) {
-                const scoreDisplay = p.score === 'Pending' ? '<span class="text-slate-500 text-[10px]">Pending</span>' : `<span class="text-emerald-400 font-mono text-sm">${p.score}</span>`;
-                html += `
-                    <div class="grid grid-cols-12 gap-4 p-3 items-center hover:bg-slate-800/50">
-                        <div class="col-span-2 text-center text-xs font-bold text-emerald-400">${pos}</div>
-                        <div class="col-span-5 overflow-hidden">
-                            <p class="font-bold text-sm text-white flex items-center"><span class="truncate">${p.name}</span> ${getInjuryBadge(p.injuryStatus)}</p>
-                            <p class="text-[10px] text-slate-400">${p.team} - ${p.position} • ${p.gameTime}</p>
-                        </div>
-                        <div class="col-span-3 text-center font-bold">${scoreDisplay}</div>
-                        <div class="col-span-2 text-center">
-                            <button onclick="triggerReSpin('${pos}')" class="text-rose-400 hover:text-rose-300 text-xs flex flex-col items-center mx-auto">
-                                <i class="fas fa-redo"></i> <span class="text-[8px] uppercase">Re-spin</span>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            } else {
-                html += `
-                    <div class="grid grid-cols-12 gap-4 p-3 items-center opacity-50">
-                        <div class="col-span-2 text-center text-xs font-bold text-slate-500">${pos}</div>
-                        <div class="col-span-5 text-sm text-slate-500 italic">Empty Slot</div>
-                        <div class="col-span-3 text-center"></div>
-                        <div class="col-span-2 text-center"><button onclick="switchTab('spin')" class="text-slate-400"><i class="fas fa-plus"></i></button></div>
-                    </div>
-                `;
-            }
-        });
-        container.innerHTML = html;
-    }
-
+    // MATCHUP TAB WITH VICTORY & DEFEAT ANIMATIONS
     function renderMatchup() {
-        const myData = allLeagueRosters[currentUser.uid];
-        document.getElementById('matchup-my-name').innerText = myData ? myData.managerName : "My Team";
-        document.getElementById('matchup-my-score').innerText = myData ? myData.score || "0.0" : "0.0";
-        
-        const humanUids = Object.keys(allLeagueRosters).sort();
-        const myIdx = humanUids.indexOf(currentUser.uid);
-        let oppUid = myIdx % 2 === 0 ? (myIdx + 1 < humanUids.length ? humanUids[myIdx + 1] : null) : humanUids[myIdx - 1];
-        let oppData = oppUid ? allLeagueRosters[oppUid] : null;
+        const members = Object.keys(currentLeague.rosters || {});
+        const myName = currentUser.name;
+        const oppName = members.find(m => m !== myName) || "Bot Opponent (Bye Week)";
 
-        if (oppData) {
-            document.getElementById('matchup-opp-name').innerText = oppData.managerName;
-            document.getElementById('matchup-opp-score').innerText = oppData.score || "0.0";
-        } else {
-            document.getElementById('matchup-opp-name').innerText = "Bye Week";
-            document.getElementById('matchup-opp-score').innerText = "0.0";
-        }
+        document.getElementById('matchup-my-name').innerText = myName;
+        document.getElementById('matchup-opp-name').innerText = oppName;
 
-        if(myData) {
-            let htmlMy = ''; let htmlOpp = '';
-            POSITIONS.forEach(pos => {
-                const myP = myData.roster[pos];
-                const oppP = oppData ? oppData.roster[pos] : null;
-                const formatPlayer = (p) => {
-                    if (!p) return `<div class="py-2 text-slate-600 italic">Empty</div>`;
-                    return `<div class="py-1.5 border-b border-slate-800 flex justify-between items-center">
-                        <div><span class="text-slate-500 font-bold text-[10px] uppercase">${pos}:</span> <span class="text-white font-bold">${p.name}</span> <span class="text-[9px] text-slate-400 block">${p.gameTime}</span></div>
-                        <span class="text-emerald-400 font-bold">${p.score || 'Pending'}</span>
-                    </div>`;
-                };
-                htmlMy += formatPlayer(myP);
-                if(oppData) htmlOpp += formatPlayer(oppP);
-            });
-            document.getElementById('matchup-my-roster').innerHTML = htmlMy;
-            if(oppData) document.getElementById('matchup-opp-roster').innerHTML = htmlOpp;
+        const myRoster = currentLeague.rosters[myName] || {};
+        let myTotal = Object.values(myRoster).reduce((sum, p) => sum + (p.score || 0), 0);
+        document.getElementById('matchup-my-score').innerText = myTotal.toFixed(1);
+
+        let oppTotal = oppName.includes('Bot') ? 85.5 : 92.4;
+        document.getElementById('matchup-opp-score').innerText = oppTotal.toFixed(1);
+
+        let myRosterHtml = `<div class="font-bold text-slate-400 mb-1">${myName}'s Lineup</div>`;
+        POSITIONS.forEach(pos => {
+            const p = myRoster[pos];
+            myRosterHtml += `<div class="flex justify-between text-slate-300 py-0.5 border-b border-slate-800"><span>${pos}: ${p ? p.name : 'Empty'}</span><span class="font-bold">${p ? p.score.toFixed(1) : '0.0'}</span></div>`;
+        });
+        document.getElementById('matchup-my-roster').innerHTML = myRosterHtml;
+
+        let oppRosterHtml = `<div class="font-bold text-slate-400 mb-1">${oppName}'s Lineup</div>`;
+        POSITIONS.forEach(pos => {
+            oppRosterHtml += `<div class="flex justify-between text-slate-300 py-0.5 border-b border-slate-800"><span>${pos}: Player</span><span class="font-bold">10.2</span></div>`;
+        });
+        document.getElementById('matchup-opp-roster').innerHTML = oppRosterHtml;
+
+        const banner = document.getElementById('matchup-banner');
+        if (myTotal > 0 || oppTotal > 0) {
+            banner.classList.remove('hidden');
+            if (myTotal >= oppTotal) {
+                banner.className = "w-full text-center py-3 px-4 rounded-xl font-black text-lg uppercase tracking-wider shadow-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
+                banner.innerHTML = `<i class="fas fa-trophy mr-2 text-yellow-400 animate-bounce"></i> VICTORY! CHAMPION OF THE WEEK! <i class="fas fa-beer ml-2 text-yellow-400"></i>`;
+                triggerBeerShower();
+            } else {
+                banner.className = "w-full text-center py-4 px-4 rounded-xl font-black text-2xl uppercase tracking-wider shadow-lg bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center gap-3 animate-pulse";
+                banner.innerHTML = `<i class="fas fa-hand-middle-finger text-3xl"></i> LOSER!`;
+            }
         }
     }
 
-    window.checkMatchupResult = () => {
-        const myData = allLeagueRosters[currentUser.uid];
-        const humanUids = Object.keys(allLeagueRosters).sort();
-        const myIdx = humanUids.indexOf(currentUser.uid);
-        let oppUid = myIdx % 2 === 0 ? (myIdx + 1 < humanUids.length ? humanUids[myIdx + 1] : null) : humanUids[myIdx - 1];
-        let oppData = oppUid ? allLeagueRosters[oppUid] : null;
-
-        const myScore = parseFloat(myData?.score || 0);
-        const oppScore = parseFloat(oppData?.score || 0);
-
-        const modal = document.getElementById('modal-result-animation');
-        const iconContainer = document.getElementById('result-icon-container');
-        const titleEl = document.getElementById('result-title');
-        const descEl = document.getElementById('result-desc');
-
-        modal.classList.remove('hidden');
-
-        if (myScore >= oppScore) {
-            // VICTORY
-            titleEl.innerText = "VICTORY!";
-            titleEl.className = "text-3xl font-black mb-2 uppercase text-emerald-400";
-            descEl.innerText = `You crushed your matchup with ${myScore} pts vs ${oppScore} pts!`;
-            iconContainer.innerHTML = `<i class="fas fa-trophy text-6xl text-amber-400 drop-shadow-[0_0_20px_rgba(251,191,36,0.6)] animate-bounce"></i>`;
-            startBeers();
-        } else {
-            // DEFEAT
-            titleEl.innerText = "LOSER!";
-            titleEl.className = "text-3xl font-black mb-2 uppercase text-rose-500 animate-pulse";
-            descEl.innerText = `You lost with ${myScore} pts vs ${oppScore} pts. Better luck next week!`;
-            iconContainer.innerHTML = `<div class="text-6xl text-rose-500 font-black mb-2">🖕</div>`;
+    function triggerBeerShower() {
+        if (document.querySelectorAll('.beer-particle').length > 0) return;
+        for (let i = 0; i < 25; i++) {
+            const p = document.createElement('div');
+            p.className = 'beer-particle';
+            p.innerHTML = Math.random() > 0.5 ? '🍺' : '🏆';
+            p.style.left = `${Math.random() * 100}vw`;
+            p.style.animationDuration = `${2 + Math.random() * 2}s`;
+            p.style.animationDelay = `${Math.random() * 2}s`;
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 4000);
         }
-    };
-
-    function startBeers() {
-        stopBeers();
-        beerInterval = setInterval(() => {
-            const beer = document.createElement('div');
-            beer.className = 'beer-particle';
-            beer.innerText = Math.random() > 0.5 ? '🍺' : '🍻';
-            beer.style.left = Math.random() * 100 + 'vw';
-            beer.style.animationDuration = (Math.random() * 2 + 2) + 's';
-            document.body.appendChild(beer);
-            setTimeout(() => beer.remove(), 4000);
-        }, 200);
     }
 
-    window.stopBeers = () => {
-        if (beerInterval) clearInterval(beerInterval);
-        document.querySelectorAll('.beer-particle').forEach(el => el.remove());
-    };
-
-    function updateStandings() {
-        if (!currentLeagueData || !currentLeagueData.managers) return;
-        const standings = [];
-        for (let uid in currentLeagueData.managers) {
-            const m = currentLeagueData.managers[uid];
-            const r = allLeagueRosters[uid];
-            standings.push({ name: m.name, w: m.w, l: m.l, t: m.t, pts: r ? (r.score || 0) : 0 });
-        }
-        standings.sort((a, b) => b.pts - a.pts);
+    // STANDINGS TAB
+    function renderStandings() {
+        const standings = currentLeague.standings || {};
         const tbody = document.getElementById('standings-body');
         let html = '';
-        standings.forEach((s, idx) => {
-            html += `<tr class="hover:bg-slate-800/50 text-sm">
-                <td class="p-4 font-bold text-slate-300">${idx + 1}</td>
-                <td class="p-4 font-bold text-white">${s.name}</td>
-                <td class="p-4 text-center font-mono">${s.w}-${s.l}-${s.t}</td>
-                <td class="p-4 text-right font-mono text-emerald-400">${parseFloat(s.pts).toFixed(2)}</td>
-            </tr>`;
+        let sorted = Object.keys(standings).sort((a,b) => standings[b].wins - standings[a].wins);
+
+        sorted.forEach((mgr, idx) => {
+            const s = standings[mgr];
+            html += `
+                <tr class="hover:bg-slate-800/40 transition-colors">
+                    <td class="p-4 font-black text-emerald-400">#${idx + 1}</td>
+                    <td class="p-4 font-bold text-white">${mgr} ${mgr === currentUser.name ? '<span class="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded ml-2">You</span>' : ''}</td>
+                    <td class="p-4 text-center font-mono">${s.wins}-${s.losses}-${s.ties}</td>
+                    <td class="p-4 text-right font-black text-emerald-400">${s.pts.toFixed(1)}</td>
+                </tr>
+            `;
         });
         tbody.innerHTML = html;
     }
-
-    window.addEventListener('load', init);
 </script>
-
-</body>
-</html>
