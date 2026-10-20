@@ -397,7 +397,6 @@
     <!-- PLAYER SELECTION MODAL -->
     <div id="player-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel rounded-2xl w-full max-w-xl max-h-[88vh] flex flex-col shadow-2xl border border-slate-700 overflow-hidden">
-            <!-- Modal Header -->
             <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/70">
                 <div class="flex items-center gap-3">
                     <div id="modal-team-logo" class="w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-xl shadow-md overflow-hidden p-1.5">
@@ -416,7 +415,6 @@
                 </button>
             </div>
 
-            <!-- Matchup Game Time Strip -->
             <div id="modal-gametime-strip" class="bg-slate-950/90 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between text-xs">
                 <div class="flex items-center gap-2 text-slate-300">
                     <i class="fas fa-clock text-emerald-400 text-sm"></i>
@@ -427,7 +425,6 @@
                 </div>
             </div>
 
-            <!-- Player List -->
             <div class="p-4 flex-1 overflow-y-auto">
                 <div id="players-loading" class="flex flex-col items-center justify-center py-10 text-slate-400">
                     <div class="loader mb-3"></div>
@@ -458,9 +455,7 @@
 
         const POSITIONS = ['QB', 'RB1', 'RB2', 'WR1', 'WR2', 'TE', 'FLEX', 'DST', 'K'];
 
-        // Verified Team Reference Directory mapping team names/codes to ESPN media CDN logos
         const TEAM_REGISTRY = {
-            // NFL
             "Arizona Cardinals": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png", sport: "nfl", id: "22" },
             "Atlanta Falcons": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/atl.png", sport: "nfl", id: "1" },
             "Baltimore Ravens": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/bal.png", sport: "nfl", id: "33" },
@@ -494,7 +489,6 @@
             "Tennessee Titans": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ten.png", sport: "nfl", id: "10" },
             "Washington Commanders": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png", sport: "nfl", id: "28" },
 
-            // Major Colleges (Auto-extended dynamically via API)
             "Alabama Crimson Tide": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png", sport: "college-football", id: "333" },
             "Georgia Bulldogs": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png", sport: "college-football", id: "61" },
             "Ohio State Buckeyes": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png", sport: "college-football", id: "194" },
@@ -507,13 +501,12 @@
             "USC Trojans": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/30.png", sport: "college-football", id: "30" }
         };
 
-        // Helper to retrieve authentic logo URL matching any player's actual team name
         function getTeamLogoUrl(teamName, fallbackLogo) {
+            if (!teamName) return fallbackLogo || "https://a.espncdn.com/i/teamlogos/nfl/500/nfl.png";
             if (TEAM_REGISTRY[teamName] && TEAM_REGISTRY[teamName].logoUrl) {
                 return TEAM_REGISTRY[teamName].logoUrl;
             }
-            // Fuzzy search through registry keys
-            const key = Object.keys(TEAM_REGISTRY).find(k => k.toLowerCase() === (teamName || '').toLowerCase() || k.toLowerCase().includes((teamName || '').toLowerCase()));
+            const key = Object.keys(TEAM_REGISTRY).find(k => k.toLowerCase() === teamName.toLowerCase() || k.toLowerCase().includes(teamName.toLowerCase()));
             if (key) return TEAM_REGISTRY[key].logoUrl;
             return fallbackLogo || "https://a.espncdn.com/i/teamlogos/nfl/500/nfl.png";
         }
@@ -939,7 +932,6 @@
 
         function generateAIRoster() {
             const botRoster = {};
-            // Authentic NFL & College Football star candidates with verified team affiliations
             const samplePicks = {
                 'QB': [
                     { name: "Patrick Mahomes", pos: "QB", team: "Kansas City Chiefs", proj: 22.4 },
@@ -978,9 +970,9 @@
                     { name: "Kyren Williams", pos: "RB", team: "Los Angeles Rams", proj: 16.1 }
                 ],
                 'DST': [
-                    { name: "San Francisco 49ers D/ST", pos: "DST", team: "San Francisco 49ers", proj: 9.5 },
-                    { name: "Baltimore Ravens D/ST", pos: "DST", team: "Baltimore Ravens", proj: 9.0 },
-                    { name: "Denver Broncos D/ST", pos: "DST", team: "Denver Broncos", proj: 8.8 }
+                    { name: "Defense/Special Teams", pos: "DST", team: "San Francisco 49ers", proj: 9.5 },
+                    { name: "Defense/Special Teams", pos: "DST", team: "Baltimore Ravens", proj: 9.0 },
+                    { name: "Defense/Special Teams", pos: "DST", team: "Denver Broncos", proj: 8.8 }
                 ],
                 'K': [
                     { name: "Harrison Butker", pos: "K", team: "Kansas City Chiefs", proj: 8.5 },
@@ -1139,6 +1131,20 @@
             loader.classList.remove('hidden');
 
             let players = [];
+
+            // 1. Single unified Team Defense/Special Teams card bundled under the team
+            players.push({
+                name: "Defense/Special Teams",
+                pos: "DST",
+                team: currentSpinTeam.name,
+                logoUrl: currentSpinTeam.logoUrl,
+                isStarter: true,
+                isDst: true,
+                lastWeek: +(8 + Math.random() * 6).toFixed(1),
+                projected: +(9.0 + Math.random() * 2.5).toFixed(1),
+                injury: 'Healthy'
+            });
+
             try {
                 const rosterRes = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/${currentSpinTeam.sport}/teams/${currentSpinTeam.id}/roster`);
                 if (rosterRes.ok) {
@@ -1147,62 +1153,85 @@
                         rosterData.athletes.forEach(group => {
                             if (group.items) {
                                 group.items.forEach((athlete, index) => {
-                                    const posAbbr = athlete.position ? athlete.position.abbreviation : 'FLEX';
-                                    const excludedPositions = ['G', 'C', 'OT', 'LT', 'RT', 'OL', 'DE', 'DT', 'DL', 'LB', 'CB', 'S', 'DB', 'FS', 'SS', 'MLB', 'OLB', 'P'];
-                                    if (!excludedPositions.includes(posAbbr)) {
-                                        const isStarter = athlete.starter === true || athlete.depthOrder === 1 || index < 3;
-                                        let baseProj = isStarter ? (posAbbr === 'QB' ? 19.5 : (posAbbr === 'RB' ? 15.0 : (posAbbr === 'WR' ? 14.5 : 10.0))) : 4.5;
-                                        let randomizedProj = +(baseProj + (Math.random() * 4.5) - (Math.random() * 2)).toFixed(1);
+                                    const rawPos = athlete.position ? athlete.position.abbreviation : 'FLEX';
+                                    
+                                    // Strictly eliminate individual defensive positions, punters, and special team snappers
+                                    const strictlyExcluded = [
+                                        'P', 'PUNTER', 'LS', 'LONG SNAPPER', 'H', 'PR', 'KR',
+                                        'G', 'C', 'OT', 'LT', 'RT', 'OL', 
+                                        'DE', 'DT', 'DL', 'LB', 'ILB', 'OLB', 'MLB', 'CB', 'S', 'DB', 'FS', 'SS', 'NT'
+                                    ];
 
-                                        players.push({
-                                            name: athlete.fullName || athlete.displayName,
-                                            pos: posAbbr,
-                                            team: currentSpinTeam.name,
-                                            logoUrl: currentSpinTeam.logoUrl,
-                                            isStarter: isStarter,
-                                            lastWeek: +(randomizedProj * (0.8 + Math.random() * 0.4)).toFixed(1),
-                                            projected: randomizedProj,
-                                            injury: athlete.injuries && athlete.injuries.length > 0 ? athlete.injuries[0].status : 'Healthy'
-                                        });
+                                    if (strictlyExcluded.includes(rawPos.toUpperCase())) {
+                                        return;
                                     }
+
+                                    // Field goal kickers only (exclude punters, snappers)
+                                    let assignedPos = rawPos;
+                                    if (['K', 'PK', 'KICKER', 'PLACEKICKER'].includes(rawPos.toUpperCase())) {
+                                        assignedPos = 'K';
+                                    } else if (!['QB', 'RB', 'FB', 'WR', 'TE'].includes(rawPos.toUpperCase())) {
+                                        return;
+                                    }
+
+                                    const isStarter = athlete.starter === true || athlete.depthOrder === 1 || index === 0;
+                                    let baseProj = isStarter 
+                                        ? (assignedPos === 'QB' ? 20.0 : (assignedPos === 'RB' ? 15.5 : (assignedPos === 'WR' ? 14.8 : (assignedPos === 'K' ? 8.5 : 11.5)))) 
+                                        : (assignedPos === 'K' ? 3.0 : 4.5);
+                                    let randomizedProj = +(baseProj + (Math.random() * 4.0) - (Math.random() * 2.0)).toFixed(1);
+
+                                    players.push({
+                                        name: athlete.fullName || athlete.displayName,
+                                        pos: assignedPos,
+                                        team: currentSpinTeam.name,
+                                        logoUrl: currentSpinTeam.logoUrl,
+                                        isStarter: isStarter,
+                                        isDst: false,
+                                        lastWeek: +(randomizedProj * (0.8 + Math.random() * 0.4)).toFixed(1),
+                                        projected: randomizedProj,
+                                        injury: athlete.injuries && athlete.injuries.length > 0 ? athlete.injuries[0].status : 'Healthy'
+                                    });
                                 });
                             }
                         });
                     }
                 }
             } catch (err) {
-                // fallback if network fails
+                // network failure fallback
             }
 
-            if (players.length === 0) {
-                players = [
+            if (players.length <= 1) {
+                players.push(
                     { name: "Starting Quarterback", pos: "QB", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: true, lastWeek: 21.4, projected: 22.5, injury: "Healthy" },
                     { name: "Star Running Back", pos: "RB", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: true, lastWeek: 18.2, projected: 17.5, injury: "Healthy" },
                     { name: "Primary Wideout", pos: "WR", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: true, lastWeek: 19.5, projected: 18.2, injury: "Healthy" },
                     { name: "Backup Wideout", pos: "WR", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: false, lastWeek: 7.2, projected: 6.8, injury: "Healthy" },
                     { name: "Reliable Tight End", pos: "TE", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: true, lastWeek: 13.5, projected: 12.8, injury: "Healthy" },
-                    { name: "Team Defense", pos: "DST", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: true, lastWeek: 10.0, projected: 9.0, injury: "Healthy" },
-                    { name: "Starting Kicker", pos: "K", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: true, lastWeek: 9.0, projected: 8.5, injury: "Healthy" }
-                ];
+                    { name: "Field Goal Kicker", pos: "K", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: true, lastWeek: 9.0, projected: 8.5, injury: "Healthy" }
+                );
             }
 
+            // Slot-specific filter enforcement
             let filteredPlayers = players;
             if (currentActiveSlot) {
                 if (currentActiveSlot === 'WR1' || currentActiveSlot === 'WR2') {
                     filteredPlayers = players.filter(p => p.pos === 'WR');
                 } else if (currentActiveSlot === 'RB1' || currentActiveSlot === 'RB2') {
-                    filteredPlayers = players.filter(p => p.pos === 'RB');
+                    filteredPlayers = players.filter(p => p.pos === 'RB' || p.pos === 'FB');
                 } else if (currentActiveSlot === 'QB') {
                     filteredPlayers = players.filter(p => p.pos === 'QB');
                 } else if (currentActiveSlot === 'TE') {
                     filteredPlayers = players.filter(p => p.pos === 'TE');
                 } else if (currentActiveSlot === 'DST') {
-                    filteredPlayers = players.filter(p => p.pos === 'DST' || p.pos === 'D/ST');
+                    filteredPlayers = players.filter(p => p.pos === 'DST' || p.isDst);
                 } else if (currentActiveSlot === 'K') {
                     filteredPlayers = players.filter(p => p.pos === 'K');
                 } else if (currentActiveSlot === 'FLEX') {
-                    filteredPlayers = players.filter(p => ['WR', 'RB', 'TE'].includes(p.pos));
+                    filteredPlayers = players.filter(p => ['WR', 'RB', 'FB', 'TE'].includes(p.pos));
                 }
+            } else {
+                // In generic spins without a pre-clicked slot, show the DST option alongside skill players
+                filteredPlayers = players.filter(p => ['QB', 'RB', 'FB', 'WR', 'TE', 'K', 'DST'].includes(p.pos));
             }
 
             filteredPlayers.sort((a, b) => {
@@ -1237,16 +1266,25 @@
                     ? `<span class="bg-indigo-500/20 text-indigo-300 text-[9px] font-black uppercase px-2 py-0.5 rounded border border-indigo-500/40 tracking-wider flex items-center gap-1"><i class="fas fa-star text-[8px] text-indigo-400"></i> Starter</span>` 
                     : '';
 
+                const isDst = p.isDst || p.pos === 'DST';
+
                 html += `
                     <div class="glass-panel p-3.5 rounded-xl flex justify-between items-center border border-slate-700/60 ${alreadyOnRoster ? 'opacity-50' : 'hover:border-emerald-500'} transition-all">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1 flex-wrap">
-                                <h4 class="font-bold text-sm text-white">${p.name}</h4>
-                                <span class="text-[10px] bg-slate-800 text-emerald-400 font-bold px-2 py-0.5 rounded border border-slate-700">${p.pos}</span>
-                                ${starterBadge}
-                                ${injuryBadge}
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center p-1.5 flex-shrink-0">
+                                <img src="${p.logoUrl}" class="w-full h-full object-contain" alt="logo">
                             </div>
-                            <p class="text-[11px] text-slate-400">Last Week: <span class="text-slate-300 font-bold">${p.lastWeek} pts</span> • Proj: <span class="text-emerald-400 font-bold">${p.projected} pts</span> ${alreadyOnRoster ? '<span class="text-amber-400 font-bold ml-1">(On Roster)</span>' : ''}</p>
+                            <div>
+                                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                                    <h4 class="font-bold text-sm text-white">${p.name}</h4>
+                                    <span class="text-[10px] bg-slate-800 text-emerald-400 font-bold px-2 py-0.5 rounded border border-slate-700">${isDst ? 'D/ST' : p.pos}</span>
+                                    ${starterBadge}
+                                    ${!isDst ? injuryBadge : ''}
+                                </div>
+                                <p class="text-[11px] text-slate-400">
+                                    ${isDst ? 'Full Team Defense & Return Unit • ' : ''}Last Week: <span class="text-slate-300 font-bold">${p.lastWeek} pts</span> • Proj: <span class="text-emerald-400 font-bold">${p.projected} pts</span> ${alreadyOnRoster ? '<span class="text-amber-400 font-bold ml-1">(On Roster)</span>' : ''}
+                                </p>
+                            </div>
                         </div>
                         <button ${alreadyOnRoster ? 'disabled' : `onclick="selectPlayer('${p.name.replace(/'/g, "\\'")}', '${p.pos}', ${p.projected})"`} class="px-3.5 py-2 rounded-lg text-xs font-bold ${alreadyOnRoster ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'} transition-colors ml-2 flex-shrink-0">
                             ${alreadyOnRoster ? 'On Roster' : 'Select'}
@@ -1269,7 +1307,11 @@
 
             let targetSlot = currentActiveSlot;
             if (!targetSlot) {
-                if (pos === 'RB') {
+                if (pos === 'DST' || name === "Defense/Special Teams") {
+                    targetSlot = 'DST';
+                } else if (pos === 'K') {
+                    targetSlot = 'K';
+                } else if (pos === 'RB' || pos === 'FB') {
                     targetSlot = !currentLeague.rosters[currentUser.name]['RB1'] ? 'RB1' : (!currentLeague.rosters[currentUser.name]['RB2'] ? 'RB2' : 'FLEX');
                 } else if (pos === 'WR') {
                     targetSlot = !currentLeague.rosters[currentUser.name]['WR1'] ? 'WR1' : (!currentLeague.rosters[currentUser.name]['WR2'] ? 'WR2' : 'FLEX');
@@ -1280,7 +1322,6 @@
                 }
             }
 
-            // Ensure exact team logo is coupled with the athlete
             const exactLogo = getTeamLogoUrl(currentSpinTeam.name, currentSpinTeam.logoUrl);
 
             currentLeague.rosters[currentUser.name][targetSlot] = {
@@ -1317,7 +1358,8 @@
                 if (roster[pos]) {
                     filled++;
                     el.classList.add('filled');
-                    el.innerHTML = `<span class="text-[8px] text-emerald-400">${pos}</span><span class="text-[9px] font-bold leading-tight line-clamp-2 px-0.5 text-center">${roster[pos].name}</span>`;
+                    const displayName = roster[pos].name === "Defense/Special Teams" ? `${roster[pos].team.split(' ').pop()} D/ST` : roster[pos].name;
+                    el.innerHTML = `<span class="text-[8px] text-emerald-400">${pos}</span><span class="text-[9px] font-bold leading-tight line-clamp-2 px-0.5 text-center">${displayName}</span>`;
                 } else {
                     el.classList.remove('filled');
                     el.innerHTML = pos;
@@ -1402,7 +1444,6 @@
             if (oppTotal === 0 && oppName === "AI Rival") oppTotal = 94.2;
             document.getElementById('matchup-opp-score').innerText = oppTotal.toFixed(1);
 
-            // Render Human Lineup with Verified Exact Team Logos
             let myRosterHtml = `<div class="font-bold text-slate-400 mb-2">${myName}'s Lineup</div>`;
             POSITIONS.forEach(pos => {
                 const p = myRoster[pos];
@@ -1425,7 +1466,6 @@
             });
             document.getElementById('matchup-my-roster').innerHTML = myRosterHtml;
 
-            // Render Opponent / AI Lineup with Verified Exact Team Logos
             let oppRosterHtml = `<div class="font-bold text-slate-400 mb-2">${oppName}'s Lineup (Week ${activeSlateWeek})</div>`;
             POSITIONS.forEach(pos => {
                 const p = oppRoster[pos];
@@ -1506,5 +1546,4 @@
         }
     </script>
 </body>
-</html>
 </html>
