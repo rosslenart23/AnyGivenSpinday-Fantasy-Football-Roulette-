@@ -383,7 +383,7 @@
             <div class="p-4 flex-1 overflow-y-auto">
                 <div id="players-loading" class="flex flex-col items-center justify-center py-10 text-slate-400">
                     <div class="loader mb-3"></div>
-                    <p class="text-sm">Fetching live ESPN roster...</p>
+                    <p class="text-sm">Fetching live ESPN roster & depth charts...</p>
                 </div>
                 <div id="players-list" class="space-y-3"></div>
             </div>
@@ -734,16 +734,13 @@
             const targetIndex = (totalTeams * extraLoops) + winningIndex;
             const targetOffset = -(targetIndex * itemHeight);
 
-            // Reset position immediately before launching aggressive spin
             track.style.transition = 'none';
             track.style.transform = 'translateY(0px)';
             track.style.filter = 'none';
             container.classList.remove('spinner-shaking');
 
-            // Force reflow
             void track.offsetWidth;
 
-            // Aggressive acceleration with overshoot bounce
             track.style.transition = 'transform 3.8s cubic-bezier(0.08, 0.95, 0.12, 1.08), filter 3.8s ease-out';
             track.style.transform = `translateY(${targetOffset}px)`;
             track.style.filter = 'blur(2.5px)';
@@ -813,15 +810,23 @@
                     if (rosterData && rosterData.athletes) {
                         rosterData.athletes.forEach(group => {
                             if (group.items) {
-                                group.items.forEach(athlete => {
+                                group.items.forEach((athlete, index) => {
                                     const posAbbr = athlete.position ? athlete.position.abbreviation : 'FLEX';
                                     const excludedPositions = ['G', 'C', 'OT', 'LT', 'RT', 'OL', 'DE', 'DT', 'DL', 'LB', 'CB', 'S', 'DB', 'FS', 'SS', 'MLB', 'OLB', 'P'];
                                     if (!excludedPositions.includes(posAbbr)) {
+                                        // Starters are ranked high on depth charts/roster group index
+                                        const isStarter = athlete.starter === true || athlete.depthOrder === 1 || index < 3;
+                                        
+                                        // Projected points scaled with realistic starter vs reserve spreads
+                                        let baseProj = isStarter ? (posAbbr === 'QB' ? 19.5 : (posAbbr === 'RB' ? 15.0 : (posAbbr === 'WR' ? 14.5 : 10.0))) : 4.5;
+                                        let randomizedProj = +(baseProj + (Math.random() * 4.5) - (Math.random() * 2)).toFixed(1);
+
                                         players.push({
                                             name: athlete.fullName || athlete.displayName,
                                             pos: posAbbr,
-                                            lastWeek: +(10 + Math.random() * 15).toFixed(1),
-                                            projected: +(12 + Math.random() * 12).toFixed(1),
+                                            isStarter: isStarter,
+                                            lastWeek: +(randomizedProj * (0.8 + Math.random() * 0.4)).toFixed(1),
+                                            projected: randomizedProj,
                                             injury: athlete.injuries && athlete.injuries.length > 0 ? athlete.injuries[0].status : 'Healthy'
                                         });
                                     }
@@ -836,15 +841,17 @@
 
             if (players.length === 0) {
                 players = [
-                    { name: "Starting Quarterback", pos: "QB", lastWeek: 21.4, projected: 22.5, injury: "Healthy" },
-                    { name: "Star Running Back", pos: "RB", lastWeek: 18.2, projected: 17.5, injury: "Healthy" },
-                    { name: "Primary Wideout", pos: "WR", lastWeek: 19.5, projected: 18.2, injury: "Healthy" },
-                    { name: "Reliable Tight End", pos: "TE", lastWeek: 13.5, projected: 12.8, injury: "Healthy" },
-                    { name: "Team Defense", pos: "DST", lastWeek: 10.0, projected: 9.0, injury: "Healthy" },
-                    { name: "Starting Kicker", pos: "K", lastWeek: 9.0, projected: 8.5, injury: "Healthy" }
+                    { name: "Starting Quarterback", pos: "QB", isStarter: true, lastWeek: 21.4, projected: 22.5, injury: "Healthy" },
+                    { name: "Star Running Back", pos: "RB", isStarter: true, lastWeek: 18.2, projected: 17.5, injury: "Healthy" },
+                    { name: "Primary Wideout", pos: "WR", isStarter: true, lastWeek: 19.5, projected: 18.2, injury: "Healthy" },
+                    { name: "Backup Wideout", pos: "WR", isStarter: false, lastWeek: 7.2, projected: 6.8, injury: "Healthy" },
+                    { name: "Reliable Tight End", pos: "TE", isStarter: true, lastWeek: 13.5, projected: 12.8, injury: "Healthy" },
+                    { name: "Team Defense", pos: "DST", isStarter: true, lastWeek: 10.0, projected: 9.0, injury: "Healthy" },
+                    { name: "Starting Kicker", pos: "K", isStarter: true, lastWeek: 9.0, projected: 8.5, injury: "Healthy" }
                 ];
             }
 
+            // 1. Filter players based on slot restrictions
             let filteredPlayers = players;
             if (currentActiveSlot) {
                 if (currentActiveSlot === 'WR1' || currentActiveSlot === 'WR2') {
@@ -863,6 +870,14 @@
                     filteredPlayers = players.filter(p => ['WR', 'RB', 'TE'].includes(p.pos));
                 }
             }
+
+            // 2. Put starting lineup players towards top, ordered by projected points descending
+            filteredPlayers.sort((a, b) => {
+                if (a.isStarter !== b.isStarter) {
+                    return a.isStarter ? -1 : 1; // Starters always prioritized at top
+                }
+                return b.projected - a.projected; // Highest projected points first
+            });
 
             loader.classList.add('hidden');
             let html = '';
@@ -885,17 +900,22 @@
                     injuryBadge = `<span class="bg-rose-500/20 text-rose-400 text-[10px] font-bold px-2 py-0.5 rounded border border-rose-500/30">${p.injury}</span>`;
                 }
 
+                const starterBadge = p.isStarter 
+                    ? `<span class="bg-indigo-500/20 text-indigo-300 text-[9px] font-black uppercase px-2 py-0.5 rounded border border-indigo-500/40 tracking-wider flex items-center gap-1"><i class="fas fa-star text-[8px] text-indigo-400"></i> Starter</span>` 
+                    : '';
+
                 html += `
                     <div class="glass-panel p-3.5 rounded-xl flex justify-between items-center border border-slate-700/60 ${alreadyOnRoster ? 'opacity-50' : 'hover:border-emerald-500'} transition-all">
                         <div>
-                            <div class="flex items-center gap-2 mb-1">
+                            <div class="flex items-center gap-2 mb-1 flex-wrap">
                                 <h4 class="font-bold text-sm text-white">${p.name}</h4>
                                 <span class="text-[10px] bg-slate-800 text-emerald-400 font-bold px-2 py-0.5 rounded border border-slate-700">${p.pos}</span>
+                                ${starterBadge}
                                 ${injuryBadge}
                             </div>
                             <p class="text-[11px] text-slate-400">Last Week: <span class="text-slate-300 font-bold">${p.lastWeek} pts</span> • Proj: <span class="text-emerald-400 font-bold">${p.projected} pts</span> ${alreadyOnRoster ? '<span class="text-amber-400 font-bold ml-1">(On Roster)</span>' : ''}</p>
                         </div>
-                        <button ${alreadyOnRoster ? 'disabled' : `onclick="selectPlayer('${p.name}', '${p.pos}',${p.projected})"`} class="px-3.5 py-2 rounded-lg text-xs font-bold ${alreadyOnRoster ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'} transition-colors">
+                        <button ${alreadyOnRoster ? 'disabled' : `onclick="selectPlayer('${p.name.replace(/'/g, "\\'")}', '${p.pos}',${p.projected})"`} class="px-3.5 py-2 rounded-lg text-xs font-bold ${alreadyOnRoster ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'} transition-colors ml-2 flex-shrink-0">
                             ${alreadyOnRoster ? 'On Roster' : 'Select'}
                         </button>
                     </div>
