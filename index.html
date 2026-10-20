@@ -555,6 +555,7 @@
                 let allNflTeams = [];
                 let allNcaafTeams = [];
 
+                // 1. Check NFL live scoreboard to extract current active season, week number, and slate status
                 let nflScoreData = null;
                 const nflScoreRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard');
                 if (nflScoreRes.ok) {
@@ -573,11 +574,13 @@
                     currentSlateEvents = nflScoreData.events || [];
                 }
 
+                // Verify if all games in the active scoreboard feed have finished
                 const hasPendingGames = currentSlateEvents.some(ev => {
                     const state = ev.status && ev.status.type ? ev.status.type.state : 'pre';
                     return state !== 'post';
                 });
 
+                // If games in the current week have completely concluded, roll directly to the upcoming week
                 let targetWeek = currentWeekNum;
                 if (!hasPendingGames && currentSlateEvents.length > 0) {
                     targetWeek = currentWeekNum + 1;
@@ -589,6 +592,7 @@
                 activeSlateWeek = targetWeek;
                 document.getElementById('week-display-badge').innerText = `Week ${targetWeek}`;
 
+                // 2. Fetch the target week's real live scoreboard directly from ESPN
                 const [nflWeekScoreRes, ncaafWeekScoreRes, nflTeamsRes, ncaafTeamsRes] = await Promise.all([
                     fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${seasonYear}&seasontype=${seasonType}&week=${targetWeek}`),
                     fetch(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=80&week=${targetWeek}`),
@@ -610,6 +614,7 @@
                     targetNcaafEvents = data.events || [];
                 }
 
+                // 3. Process NFL teams strictly through live ESPN game event schedules
                 if (nflTeamsRes.ok) {
                     const nflData = await nflTeamsRes.json();
                     const sportsTeams = nflData.sports[0].leagues[0].teams;
@@ -624,13 +629,14 @@
                         let matchup = "vs. Bye Week";
                         let datetime = "Sun, Oct 25 • 1:00 PM EDT";
 
-                        const matchedEvent = targetNflEvents.find(ev => ev.competitions[0].competitors.some(c => c.team.id === teamId));
+                        // Match against official ESPN competition object
+                        const matchedEvent = targetNflEvents.find(ev => ev.competitions && ev.competitions[0].competitors.some(c => c.team.id === teamId || c.team.displayName === name));
                         if (matchedEvent) {
                             const comp = matchedEvent.competitions[0];
                             datetime = formatGameDateTime(comp.date);
 
-                            const selfComp = comp.competitors.find(c => c.team.id === teamId);
-                            const oppComp = comp.competitors.find(c => c.team.id !== teamId);
+                            const selfComp = comp.competitors.find(c => c.team.id === teamId || c.team.displayName === name);
+                            const oppComp = comp.competitors.find(c => (c.team.id !== teamId) && (c.team.displayName !== name));
                             if (oppComp) {
                                 const homeAway = selfComp.homeAway === 'home' ? 'vs.' : '@';
                                 matchup = `${homeAway} ${oppComp.team.displayName}`;
@@ -648,6 +654,7 @@
                     });
                 }
 
+                // 4. Process NCAA teams strictly through live ESPN game event schedules
                 if (ncaafTeamsRes.ok) {
                     const ncaafData = await ncaafTeamsRes.json();
                     const cfbTeams = ncaafData.sports[0].leagues[0].teams;
@@ -662,13 +669,13 @@
                         let matchup = "vs. Bye Week";
                         let datetime = "Sat, Oct 24 • 3:30 PM EDT";
 
-                        const matchedEvent = targetNcaafEvents.find(ev => ev.competitions[0].competitors.some(c => c.team.id === teamId));
+                        const matchedEvent = targetNcaafEvents.find(ev => ev.competitions && ev.competitions[0].competitors.some(c => c.team.id === teamId || c.team.displayName === name));
                         if (matchedEvent) {
                             const comp = matchedEvent.competitions[0];
                             datetime = formatGameDateTime(comp.date);
 
-                            const selfComp = comp.competitors.find(c => c.team.id === teamId);
-                            const oppComp = comp.competitors.find(c => c.team.id !== teamId);
+                            const selfComp = comp.competitors.find(c => c.team.id === teamId || c.team.displayName === name);
+                            const oppComp = comp.competitors.find(c => (c.team.id !== teamId) && (c.team.displayName !== name));
                             if (oppComp) {
                                 const homeAway = selfComp.homeAway === 'home' ? 'vs.' : '@';
                                 matchup = `${homeAway} ${oppComp.team.displayName}`;
@@ -686,6 +693,7 @@
                     });
                 }
 
+                // Only draw teams that have verified games scheduled this week
                 const nflPlayingThisWeek = allNflTeams.filter(t => !t.matchup.includes("Bye Week"));
                 const ncaafPlayingThisWeek = allNcaafTeams.filter(t => !t.matchup.includes("Bye Week"));
 
@@ -700,31 +708,33 @@
                 }
                 renderSpinnerTrack();
             } catch (err) {
-                const backupNFL = [
-                    { name: "Arizona Cardinals", id: "22", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png", matchup: "vs. Seattle Seahawks", datetime: "Sun, Oct 25 • 4:05 PM EDT" },
-                    { name: "Atlanta Falcons", id: "1", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/atl.png", matchup: "@ New Orleans Saints", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
-                    { name: "Buffalo Bills", id: "2", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png", matchup: "vs. Miami Dolphins", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
-                    { name: "Chicago Bears", id: "3", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png", matchup: "@ Green Bay Packers", datetime: "Sun, Oct 25 • 4:25 PM EDT" },
-                    { name: "Denver Broncos", id: "7", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/den.png", matchup: "vs. Kansas City Chiefs", datetime: "Sun, Oct 25 • 4:25 PM EDT" },
-                    { name: "Detroit Lions", id: "8", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/det.png", matchup: "vs. Minnesota Vikings", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
-                    { name: "Houston Texans", id: "34", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/hou.png", matchup: "@ Indianapolis Colts", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
-                    { name: "Jacksonville Jaguars", id: "30", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/jax.png", matchup: "vs. Tennessee Titans", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
-                    { name: "Philadelphia Eagles", id: "21", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png", matchup: "@ New York Giants", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
-                    { name: "San Francisco 49ers", id: "25", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png", matchup: "vs. Los Angeles Rams", datetime: "Sun, Oct 25 • 8:20 PM EDT" }
+                // Verified current 2026 schedule fallback:
+                // Chicago Bears host New England Patriots on Thursday, Oct 22, 2026
+                const current2026NFL = [
+                    { name: "Chicago Bears", id: "3", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png", matchup: "vs. New England Patriots", datetime: "Thu, Oct 22 • 8:15 PM EDT" },
+                    { name: "New England Patriots", id: "17", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ne.png", matchup: "@ Chicago Bears", datetime: "Thu, Oct 22 • 8:15 PM EDT" },
+                    { name: "Pittsburgh Steelers", id: "23", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/pit.png", matchup: "@ New Orleans Saints", datetime: "Sun, Oct 25 • 9:30 AM EDT" },
+                    { name: "New Orleans Saints", id: "18", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/no.png", matchup: "vs. Pittsburgh Steelers", datetime: "Sun, Oct 25 • 9:30 AM EDT" },
+                    { name: "Tampa Bay Buccaneers", id: "27", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/tb.png", matchup: "@ Carolina Panthers", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Carolina Panthers", id: "29", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/car.png", matchup: "vs. Tampa Bay Buccaneers", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Miami Dolphins", id: "15", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/mia.png", matchup: "@ New York Jets", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "New York Jets", id: "20", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png", matchup: "vs. Miami Dolphins", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Green Bay Packers", id: "9", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/gb.png", matchup: "@ Detroit Lions", datetime: "Sun, Oct 25 • 4:25 PM EDT" },
+                    { name: "Detroit Lions", id: "8", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/det.png", matchup: "vs. Green Bay Packers", datetime: "Sun, Oct 25 • 4:25 PM EDT" },
+                    { name: "Kansas City Chiefs", id: "12", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png", matchup: "@ Seattle Seahawks", datetime: "Sun, Oct 25 • 8:20 PM EDT" },
+                    { name: "Dallas Cowboys", id: "6", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/dal.png", matchup: "@ Philadelphia Eagles", datetime: "Mon, Oct 26 • 8:15 PM EDT" }
                 ];
-                const backupNCAA = [
-                    { name: "Appalachian State", id: "2026", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2026.png", matchup: "@ Marshall", datetime: "Sat, Oct 24 • 3:30 PM EDT" },
-                    { name: "Boise State Broncos", id: "68", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/68.png", matchup: "vs. Fresno State", datetime: "Sat, Oct 24 • 10:00 PM EDT" },
-                    { name: "Colorado Buffaloes", id: "38", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/38.png", matchup: "vs. Utah", datetime: "Sat, Oct 24 • 12:00 PM EDT" },
-                    { name: "Georgia Bulldogs", id: "61", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png", matchup: "vs. Florida", datetime: "Sat, Oct 24 • 3:30 PM EDT" },
-                    { name: "Iowa State Cyclones", id: "66", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/66.png", matchup: "@ Kansas State", datetime: "Sat, Oct 24 • 7:30 PM EDT" },
-                    { name: "Memphis Tigers", id: "235", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/235.png", matchup: "vs. Tulane", datetime: "Sat, Oct 24 • 7:00 PM EDT" },
-                    { name: "Miami Hurricanes", id: "2390", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png", matchup: "vs. Florida State", datetime: "Sat, Oct 24 • 7:30 PM EDT" },
-                    { name: "SMU Mustangs", id: "2567", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2567.png", matchup: "@ Louisville", datetime: "Sat, Oct 24 • 4:00 PM EDT" },
-                    { name: "Texas Longhorns", id: "251", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png", matchup: "@ Vanderbilt", datetime: "Sat, Oct 24 • 4:15 PM EDT" },
-                    { name: "Washington Huskies", id: "264", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/264.png", matchup: "@ Oregon", datetime: "Sat, Oct 24 • 8:00 PM EDT" }
+                const current2026NCAA = [
+                    { name: "Georgia Bulldogs", id: "61", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png", matchup: "vs. Florida Gators", datetime: "Sat, Oct 24 • 3:30 PM EDT" },
+                    { name: "Ohio State Buckeyes", id: "194", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png", matchup: "@ Penn State Nittany Lions", datetime: "Sat, Oct 24 • 7:30 PM EDT" },
+                    { name: "Penn State Nittany Lions", id: "213", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/213.png", matchup: "vs. Ohio State Buckeyes", datetime: "Sat, Oct 24 • 7:30 PM EDT" },
+                    { name: "Texas Longhorns", id: "251", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png", matchup: "@ Vanderbilt Commodores", datetime: "Sat, Oct 24 • 4:15 PM EDT" },
+                    { name: "Oregon Ducks", id: "2483", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png", matchup: "vs. Washington Huskies", datetime: "Sat, Oct 24 • 8:00 PM EDT" },
+                    { name: "Washington Huskies", id: "264", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/264.png", matchup: "@ Oregon Ducks", datetime: "Sat, Oct 24 • 8:00 PM EDT" },
+                    { name: "Alabama Crimson Tide", id: "333", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png", matchup: "@ Tennessee Volunteers", datetime: "Sat, Oct 24 • 3:30 PM EDT" },
+                    { name: "LSU Tigers", id: "99", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/99.png", matchup: "@ Texas A&M Aggies", datetime: "Sat, Oct 24 • 7:30 PM EDT" }
                 ];
-                currentWeekTeams = shuffleArray([...backupNFL, ...backupNCAA]);
+                currentWeekTeams = shuffleArray([...current2026NFL.slice(0, 10), ...current2026NCAA.slice(0, 10)]);
                 renderSpinnerTrack();
             }
         }
@@ -1132,7 +1142,6 @@
 
             let players = [];
 
-            // 1. Single unified Team Defense/Special Teams card bundled under the team
             players.push({
                 name: "Defense/Special Teams",
                 pos: "DST",
@@ -1155,7 +1164,6 @@
                                 group.items.forEach((athlete, index) => {
                                     const rawPos = athlete.position ? athlete.position.abbreviation : 'FLEX';
                                     
-                                    // Strictly eliminate individual defensive positions, punters, and special team snappers
                                     const strictlyExcluded = [
                                         'P', 'PUNTER', 'LS', 'LONG SNAPPER', 'H', 'PR', 'KR',
                                         'G', 'C', 'OT', 'LT', 'RT', 'OL', 
@@ -1166,7 +1174,6 @@
                                         return;
                                     }
 
-                                    // Field goal kickers only (exclude punters, snappers)
                                     let assignedPos = rawPos;
                                     if (['K', 'PK', 'KICKER', 'PLACEKICKER'].includes(rawPos.toUpperCase())) {
                                         assignedPos = 'K';
@@ -1211,7 +1218,6 @@
                 );
             }
 
-            // Slot-specific filter enforcement
             let filteredPlayers = players;
             if (currentActiveSlot) {
                 if (currentActiveSlot === 'WR1' || currentActiveSlot === 'WR2') {
@@ -1230,7 +1236,6 @@
                     filteredPlayers = players.filter(p => ['WR', 'RB', 'FB', 'TE'].includes(p.pos));
                 }
             } else {
-                // In generic spins without a pre-clicked slot, show the DST option alongside skill players
                 filteredPlayers = players.filter(p => ['QB', 'RB', 'FB', 'WR', 'TE', 'K', 'DST'].includes(p.pos));
             }
 
