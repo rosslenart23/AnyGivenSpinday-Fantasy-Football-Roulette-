@@ -35,7 +35,7 @@
         .spinner-track {
             display: flex;
             flex-direction: column;
-            transition: transform 4s cubic-bezier(0.15, 0.85, 0.35, 1);
+            will-change: transform, filter;
         }
         .spinner-item {
             height: 120px;
@@ -49,6 +49,14 @@
             color: #34d399;
             text-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
             text-transform: uppercase;
+        }
+        .spinner-shaking {
+            animation: violentShake 0.08s infinite alternate ease-in-out;
+        }
+        @keyframes violentShake {
+            0% { transform: translate(-3px, 2px) rotate(-0.5deg); }
+            50% { transform: translate(3px, -2px) rotate(0.5deg); }
+            100% { transform: translate(-2px, -3px) rotate(-0.3deg); }
         }
         .football-field {
             background: linear-gradient(to bottom, #047857, #065f46);
@@ -70,8 +78,8 @@
             background: rgba(255, 255, 255, 0.3);
         }
         .pos-circle {
-            width: 62px;
-            height: 62px;
+            width: 66px;
+            height: 66px;
             border-radius: 50%;
             background: rgba(15, 23, 42, 0.9);
             border: 2px solid #34d399;
@@ -90,13 +98,18 @@
             text-align: center;
         }
         .pos-circle:hover {
-            transform: scale(1.1);
+            transform: scale(1.08);
             background: #047857;
             border-color: #ffffff;
         }
         .pos-circle.filled {
-            background: #065f46;
+            background: #064e3b;
             border-color: #10b981;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+        }
+        .pos-circle.filled:hover {
+            background: #065f46;
+            border-color: #34d399;
         }
         @keyframes bounceSlow {
             0%, 100% { transform: translateY(0); }
@@ -262,21 +275,21 @@
                             <div class="field-line" style="top: 75%"></div>
                             
                             <div class="flex justify-around w-full">
-                                <div id="field-pos-WR1" onclick="openPlayerModalDirect('WR1')" class="pos-circle">WR1</div>
-                                <div id="field-pos-TE" onclick="openPlayerModalDirect('TE')" class="pos-circle">TE</div>
-                                <div id="field-pos-WR2" onclick="openPlayerModalDirect('WR2')" class="pos-circle">WR2</div>
+                                <div id="field-pos-WR1" onclick="handleFieldSlotClick('WR1')" class="pos-circle">WR1</div>
+                                <div id="field-pos-TE" onclick="handleFieldSlotClick('TE')" class="pos-circle">TE</div>
+                                <div id="field-pos-WR2" onclick="handleFieldSlotClick('WR2')" class="pos-circle">WR2</div>
                             </div>
                             <div class="flex justify-around w-full px-12">
-                                <div id="field-pos-QB" onclick="openPlayerModalDirect('QB')" class="pos-circle">QB</div>
-                                <div id="field-pos-FLEX" onclick="openPlayerModalDirect('FLEX')" class="pos-circle">FLEX</div>
+                                <div id="field-pos-QB" onclick="handleFieldSlotClick('QB')" class="pos-circle">QB</div>
+                                <div id="field-pos-FLEX" onclick="handleFieldSlotClick('FLEX')" class="pos-circle">FLEX</div>
                             </div>
                             <div class="flex justify-around w-full px-4">
-                                <div id="field-pos-RB1" onclick="openPlayerModalDirect('RB1')" class="pos-circle">RB1</div>
-                                <div id="field-pos-RB2" onclick="openPlayerModalDirect('RB2')" class="pos-circle">RB2</div>
+                                <div id="field-pos-RB1" onclick="handleFieldSlotClick('RB1')" class="pos-circle">RB1</div>
+                                <div id="field-pos-RB2" onclick="handleFieldSlotClick('RB2')" class="pos-circle">RB2</div>
                             </div>
                             <div class="flex justify-around w-full">
-                                <div id="field-pos-DST" onclick="openPlayerModalDirect('DST')" class="pos-circle">D/ST</div>
-                                <div id="field-pos-K" onclick="openPlayerModalDirect('K')" class="pos-circle">K</div>
+                                <div id="field-pos-DST" onclick="handleFieldSlotClick('DST')" class="pos-circle">D/ST</div>
+                                <div id="field-pos-K" onclick="handleFieldSlotClick('K')" class="pos-circle">K</div>
                             </div>
                         </div>
 
@@ -330,7 +343,7 @@
                         </div>
                         
                         <div id="matchup-game-status" class="w-full text-center py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider bg-slate-900 border border-slate-700 text-slate-400">
-                            Games In Progress • Official Results Settle After Monday Night Football
+                            Week Pre-Game • Official Results & Victory Animations Settle After Monday Night Football
                         </div>
 
                         <div id="matchup-banner" class="w-full hidden text-center py-3 px-4 rounded-xl font-black text-lg uppercase tracking-wider shadow-lg"></div>
@@ -385,6 +398,29 @@
         </div>
     </div>
 
+    <!-- LOCKED SLOT DETAILS MODAL -->
+    <div id="slot-locked-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel rounded-2xl w-full max-w-sm p-6 flex flex-col shadow-2xl border border-emerald-500/40 text-center">
+            <div class="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto mb-3 text-emerald-400 text-xl">
+                <i class="fas fa-lock"></i>
+            </div>
+            <span id="locked-slot-badge" class="text-[10px] bg-slate-800 text-emerald-400 font-black px-2.5 py-0.5 rounded-full border border-slate-700 mx-auto mb-2 uppercase tracking-wider">Slot Locked</span>
+            <h3 class="font-black text-lg text-white mb-1" id="locked-player-name">Player Name</h3>
+            <p class="text-xs text-slate-400 mb-4" id="locked-player-details">Team • Matchup</p>
+            <p class="text-[11px] text-slate-400 mb-6 bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+                This position is already locked on your roster. To draft another player into this slot, use a Re-spin to clear the spot first.
+            </p>
+            <div class="flex gap-3">
+                <button onclick="closeLockedModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-lg text-xs transition-colors">
+                    Close
+                </button>
+                <button id="locked-respin-btn" onclick="executeLockedSlotRespin()" class="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-bold py-2.5 rounded-lg text-xs transition-colors shadow-lg shadow-amber-900/40">
+                    <i class="fas fa-sync-alt mr-1"></i> Re-spin Slot
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- PLAYER SELECTION MODAL -->
     <div id="player-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel rounded-2xl w-full max-w-xl max-h-[88vh] flex flex-col shadow-2xl border border-slate-700 overflow-hidden">
@@ -406,6 +442,18 @@
                 </button>
             </div>
 
+            <!-- Positions Needed Header Strip -->
+            <div id="modal-needs-strip" class="bg-slate-900/90 border-b border-slate-800 px-4 py-2 flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2 text-slate-400 font-bold uppercase tracking-wider text-[11px]">
+                    <i class="fas fa-clipboard-check text-emerald-400"></i>
+                    <span>Positions Needed:</span>
+                </div>
+                <div id="modal-positions-needed" class="font-black text-emerald-400 text-xs tracking-wide">
+                    Loading needs...
+                </div>
+            </div>
+
+            <!-- Matchup Game Time Strip -->
             <div id="modal-gametime-strip" class="bg-slate-950/90 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between text-xs">
                 <div class="flex items-center gap-2 text-slate-300">
                     <i class="fas fa-clock text-emerald-400 text-sm"></i>
@@ -440,9 +488,11 @@
         let currentWeekTeams = [];
         let leaguesData = JSON.parse(localStorage.getItem('any_given_spinday_leagues') || '{}');
         let pendingDeleteId = null;
+        let pendingLockedSlot = null;
 
         let activeSlateWeek = 8;
         let isMondayNightFootballFinal = false;
+        let isCurrentWeekStarted = false;
 
         const POSITIONS = ['QB', 'RB1', 'RB2', 'WR1', 'WR2', 'TE', 'FLEX', 'DST', 'K'];
 
@@ -481,7 +531,7 @@
             "Tennessee Titans": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ten.png", sport: "nfl", id: "10" },
             "Washington Commanders": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png", sport: "nfl", id: "28" },
 
-            // Major Colleges (Auto-extended dynamically via API)
+            // NCAA College Football Teams
             "Alabama Crimson Tide": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png", sport: "college-football", id: "333" },
             "Texas A&M Aggies": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/245.png", sport: "college-football", id: "245" },
             "Tennessee Volunteers": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png", sport: "college-football", id: "2633" },
@@ -566,25 +616,37 @@
                     nflScoreData = await nflScoreRes.json();
                 }
 
-                let currentWeekNum = 7;
+                let currentWeekNum = 8;
                 let seasonYear = 2026;
                 let seasonType = 2;
                 let currentSlateEvents = [];
 
                 if (nflScoreData) {
-                    currentWeekNum = nflScoreData.week ? nflScoreData.week.number : 7;
+                    currentWeekNum = nflScoreData.week ? nflScoreData.week.number : 8;
                     seasonYear = nflScoreData.season ? nflScoreData.season.year : 2026;
                     seasonType = nflScoreData.season ? nflScoreData.season.type : 2;
                     currentSlateEvents = nflScoreData.events || [];
                 }
 
-                const hasPendingGames = currentSlateEvents.some(ev => {
+                const pendingCount = currentSlateEvents.filter(ev => {
                     const state = ev.status && ev.status.type ? ev.status.type.state : 'pre';
-                    return state !== 'post';
-                });
+                    return state === 'pre';
+                }).length;
+
+                const inProgressCount = currentSlateEvents.filter(ev => {
+                    const state = ev.status && ev.status.type ? ev.status.type.state : 'pre';
+                    return state === 'in';
+                }).length;
+
+                const finishedCount = currentSlateEvents.filter(ev => {
+                    const state = ev.status && ev.status.type ? ev.status.type.state : 'pre';
+                    return state === 'post';
+                }).length;
+
+                isCurrentWeekStarted = (inProgressCount > 0 || finishedCount > 0);
 
                 let targetWeek = currentWeekNum;
-                if (!hasPendingGames && currentSlateEvents.length > 0) {
+                if (finishedCount > 0 && pendingCount === 0 && inProgressCount === 0) {
                     targetWeek = currentWeekNum + 1;
                     isMondayNightFootballFinal = true;
                 } else {
@@ -594,7 +656,7 @@
                 activeSlateWeek = targetWeek;
                 document.getElementById('week-display-badge').innerText = `Week ${targetWeek}`;
 
-                let cfbTargetWeek = 8;
+                let cfbTargetWeek = targetWeek;
                 try {
                     const cfbLiveRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard');
                     if (cfbLiveRes.ok) {
@@ -604,7 +666,7 @@
                         }
                     }
                 } catch (e) {
-                    cfbTargetWeek = 8;
+                    cfbTargetWeek = targetWeek;
                 }
 
                 const [nflWeekScoreRes, ncaafWeekScoreRes, nflTeamsRes, ncaafTeamsRes] = await Promise.all([
@@ -996,58 +1058,64 @@
 
         function generateAIRoster() {
             const botRoster = {};
+            
             const samplePicks = {
                 'QB': [
-                    { name: "Patrick Mahomes", pos: "QB", team: "Kansas City Chiefs", proj: 22.4 },
-                    { name: "Josh Allen", pos: "QB", team: "Buffalo Bills", proj: 23.1 },
-                    { name: "Jalen Hurts", pos: "QB", team: "Philadelphia Eagles", proj: 21.0 },
-                    { name: "Lamar Jackson", pos: "QB", team: "Baltimore Ravens", proj: 22.8 }
+                    { name: "Patrick Mahomes", pos: "QB", team: "Kansas City Chiefs", sport: "nfl", proj: 22.4 },
+                    { name: "Jalen Milroe", pos: "QB", team: "Alabama Crimson Tide", sport: "college-football", proj: 21.8 },
+                    { name: "Quinn Ewers", pos: "QB", team: "Texas Longhorns", sport: "college-football", proj: 20.9 },
+                    { name: "Caleb Williams", pos: "QB", team: "Chicago Bears", sport: "nfl", proj: 21.2 }
                 ],
                 'RB1': [
-                    { name: "Bijan Robinson", pos: "RB", team: "Atlanta Falcons", proj: 18.2 },
-                    { name: "Saquon Barkley", pos: "RB", team: "Philadelphia Eagles", proj: 19.5 },
-                    { name: "Christian McCaffrey", pos: "RB", team: "San Francisco 49ers", proj: 20.0 }
+                    { name: "Saquon Barkley", pos: "RB", team: "Philadelphia Eagles", sport: "nfl", proj: 19.5 },
+                    { name: "Dylan Sampson", pos: "RB", team: "Tennessee Volunteers", sport: "college-football", proj: 18.8 },
+                    { name: "Le'Veon Moss", pos: "RB", team: "Texas A&M Aggies", sport: "college-football", proj: 17.5 }
                 ],
                 'RB2': [
-                    { name: "Jahmyr Gibbs", pos: "RB", team: "Detroit Lions", proj: 16.4 },
-                    { name: "Derrick Henry", pos: "RB", team: "Baltimore Ravens", proj: 17.0 },
-                    { name: "Breece Hall", pos: "RB", team: "New York Jets", proj: 15.8 }
+                    { name: "Jahmyr Gibbs", pos: "RB", team: "Detroit Lions", sport: "nfl", proj: 16.4 },
+                    { name: "Jam Miller", pos: "RB", team: "Alabama Crimson Tide", sport: "college-football", proj: 15.8 },
+                    { name: "Chuba Hubbard", pos: "RB", team: "Carolina Panthers", sport: "nfl", proj: 15.2 }
                 ],
                 'WR1': [
-                    { name: "Justin Jefferson", pos: "WR", team: "Minnesota Vikings", proj: 19.8 },
-                    { name: "CeeDee Lamb", pos: "WR", team: "Dallas Cowboys", proj: 18.9 },
-                    { name: "Ja'Marr Chase", pos: "WR", team: "Cincinnati Bengals", proj: 18.5 }
+                    { name: "Amon-Ra St. Brown", pos: "WR", team: "Detroit Lions", sport: "nfl", proj: 18.5 },
+                    { name: "Ryan Williams", pos: "WR", team: "Alabama Crimson Tide", sport: "college-football", proj: 18.2 },
+                    { name: "CeeDee Lamb", pos: "WR", team: "Dallas Cowboys", sport: "nfl", proj: 18.9 }
                 ],
                 'WR2': [
-                    { name: "Amon-Ra St. Brown", pos: "WR", team: "Detroit Lions", proj: 17.5 },
-                    { name: "A.J. Brown", pos: "WR", team: "Philadelphia Eagles", proj: 17.2 },
-                    { name: "Tyreek Hill", pos: "WR", team: "Miami Dolphins", proj: 18.1 }
+                    { name: "Tre Harris", pos: "WR", team: "Ole Miss Rebels", sport: "college-football", proj: 17.4 },
+                    { name: "DK Metcalf", pos: "WR", team: "Seattle Seahawks", sport: "nfl", proj: 16.8 },
+                    { name: "Isaiah Bond", pos: "WR", team: "Texas Longhorns", sport: "college-football", proj: 16.1 }
                 ],
                 'TE': [
-                    { name: "Travis Kelce", pos: "TE", team: "Kansas City Chiefs", proj: 13.8 },
-                    { name: "Sam LaPorta", pos: "TE", team: "Detroit Lions", proj: 12.5 },
-                    { name: "George Kittle", pos: "TE", team: "San Francisco 49ers", proj: 13.2 }
+                    { name: "Travis Kelce", pos: "TE", team: "Kansas City Chiefs", sport: "nfl", proj: 13.8 },
+                    { name: "Gunnar Helm", pos: "TE", team: "Texas Longhorns", sport: "college-football", proj: 12.1 },
+                    { name: "Sam LaPorta", pos: "TE", team: "Detroit Lions", sport: "nfl", proj: 12.5 }
                 ],
                 'FLEX': [
-                    { name: "Nico Collins", pos: "WR", team: "Houston Texans", proj: 15.0 },
-                    { name: "De'Von Achane", pos: "RB", team: "Miami Dolphins", proj: 15.6 },
-                    { name: "Kyren Williams", pos: "RB", team: "Los Angeles Rams", proj: 16.1 }
+                    { name: "Mario Anderson", pos: "RB", team: "Memphis Tigers", sport: "college-football", proj: 15.2 },
+                    { name: "Kenneth Walker III", pos: "RB", team: "Seattle Seahawks", sport: "nfl", proj: 15.6 },
+                    { name: "Dont'e Thornton", pos: "WR", team: "Tennessee Volunteers", sport: "college-football", proj: 14.5 }
                 ],
                 'DST': [
-                    { name: "Defense/Special Teams", pos: "DST", team: "San Francisco 49ers", proj: 9.5 },
-                    { name: "Defense/Special Teams", pos: "DST", team: "Baltimore Ravens", proj: 9.0 },
-                    { name: "Defense/Special Teams", pos: "DST", team: "Denver Broncos", proj: 8.8 }
+                    { name: "Defense/Special Teams", pos: "DST", team: "South Carolina Gamecocks", sport: "college-football", proj: 9.8 },
+                    { name: "Defense/Special Teams", pos: "DST", team: "Detroit Lions", sport: "nfl", proj: 9.2 },
+                    { name: "Defense/Special Teams", pos: "DST", team: "Texas A&M Aggies", sport: "college-football", proj: 9.4 }
                 ],
                 'K': [
-                    { name: "Harrison Butker", pos: "K", team: "Kansas City Chiefs", proj: 8.5 },
-                    { name: "Justin Tucker", pos: "K", team: "Baltimore Ravens", proj: 8.5 },
-                    { name: "Jake Elliott", pos: "K", team: "Philadelphia Eagles", proj: 8.0 }
+                    { name: "Harrison Butker", pos: "K", team: "Kansas City Chiefs", sport: "nfl", proj: 8.5 },
+                    { name: "Bert Auburn", pos: "K", team: "Texas Longhorns", sport: "college-football", proj: 8.2 },
+                    { name: "Jake Elliott", pos: "K", team: "Philadelphia Eagles", sport: "nfl", proj: 8.0 }
                 ]
             };
 
-            POSITIONS.forEach(pos => {
+            POSITIONS.forEach((pos, idx) => {
+                const targetSport = (idx % 2 === 0) ? 'college-football' : 'nfl';
                 const candidatePool = samplePicks[pos] || samplePicks['FLEX'];
-                const selected = candidatePool[Math.floor(Math.random() * candidatePool.length)];
+                const matchedSportCandidates = candidatePool.filter(c => c.sport === targetSport);
+                const selected = matchedSportCandidates.length > 0 
+                    ? matchedSportCandidates[Math.floor(Math.random() * matchedSportCandidates.length)]
+                    : candidatePool[Math.floor(Math.random() * candidatePool.length)];
+
                 const liveScore = +(selected.proj * (0.85 + Math.random() * 0.35)).toFixed(1);
                 const exactLogo = getTeamLogoUrl(selected.team);
 
@@ -1055,6 +1123,7 @@
                     name: selected.name,
                     pos: selected.pos,
                     team: selected.team,
+                    sport: selected.sport,
                     logoUrl: exactLogo,
                     matchup: "vs. Opponent",
                     projected: selected.proj,
@@ -1079,6 +1148,14 @@
 
         function startSpin() {
             if (currentWeekTeams.length === 0) return;
+
+            const roster = (currentLeague && currentLeague.rosters[currentUser.name]) || {};
+            const filledCount = Object.keys(roster).length;
+            if (filledCount >= 9) {
+                showToast("Your 9-man roster is already full! Use Re-spin in 'My Team' to replace a player.");
+                return;
+            }
+
             const btn = document.getElementById('spin-btn');
             const container = document.getElementById('spinner-container');
             const track = document.getElementById('spinner-track');
@@ -1117,7 +1194,7 @@
                 currentSpinTeam = currentWeekTeams[winningIndex];
                 btn.disabled = false;
                 btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                showToast(`Landed on ${currentSpinTeam.name} (${currentSpinTeam.matchup})!`);
+                showToast(`Landed on ${currentSpinTeam.name}!`);
                 highlightEmptyPositions();
                 openPlayerModalAuto(null);
             }, 3850);
@@ -1129,20 +1206,98 @@
                 const el = document.getElementById(`field-pos-${pos}`);
                 if (!roster[pos]) {
                     el.classList.add('animate-bounce-slow');
+                } else {
+                    el.classList.remove('animate-bounce-slow');
                 }
             });
         }
 
-        function openPlayerModalDirect(pos) {
-            if (!currentSpinTeam) {
-                currentSpinTeam = currentWeekTeams[Math.floor(Math.random() * currentWeekTeams.length)];
+        function handleFieldSlotClick(pos) {
+            const roster = (currentLeague && currentLeague.rosters[currentUser.name]) || {};
+            const existingPlayer = roster[pos];
+
+            if (existingPlayer) {
+                openLockedModal(pos, existingPlayer);
+            } else {
+                if (!currentSpinTeam) {
+                    showToast(`Please spin the wheel first to draft a player into ${pos}!`);
+                    return;
+                }
+                openPlayerModalAuto(pos);
             }
-            openPlayerModalAuto(pos);
+        }
+
+        function openLockedModal(pos, player) {
+            pendingLockedSlot = pos;
+            document.getElementById('locked-slot-badge').innerText = `Slot Locked • ${pos}`;
+            document.getElementById('locked-player-name').innerText = player.name;
+            document.getElementById('locked-player-details').innerText = `${player.team} (${player.matchup || 'Scheduled'}) • Proj: ${player.projected} pts`;
+            document.getElementById('slot-locked-modal').classList.remove('hidden');
+        }
+
+        function closeLockedModal() {
+            pendingLockedSlot = null;
+            document.getElementById('slot-locked-modal').classList.add('hidden');
+        }
+
+        function executeLockedSlotRespin() {
+            if (pendingLockedSlot) {
+                const slotToClear = pendingLockedSlot;
+                closeLockedModal();
+                respinSlot(slotToClear);
+            }
+        }
+
+        function getOpenSlotsForPosition(pos, isDst, currentRoster) {
+            const openSlots = [];
+            if (isDst || pos === 'DST') {
+                if (!currentRoster['DST']) openSlots.push('DST');
+            } else if (pos === 'K') {
+                if (!currentRoster['K']) openSlots.push('K');
+            } else if (pos === 'QB') {
+                if (!currentRoster['QB']) openSlots.push('QB');
+            } else if (pos === 'TE') {
+                if (!currentRoster['TE']) openSlots.push('TE');
+                if (!currentRoster['FLEX']) openSlots.push('FLEX');
+            } else if (pos === 'RB' || pos === 'FB') {
+                if (!currentRoster['RB1']) openSlots.push('RB1');
+                if (!currentRoster['RB2']) openSlots.push('RB2');
+                if (!currentRoster['FLEX']) openSlots.push('FLEX');
+            } else if (pos === 'WR') {
+                if (!currentRoster['WR1']) openSlots.push('WR1');
+                if (!currentRoster['WR2']) openSlots.push('WR2');
+                if (!currentRoster['FLEX']) openSlots.push('FLEX');
+            }
+            return openSlots;
+        }
+
+        function calculatePositionsNeeded(currentRoster) {
+            const needed = [];
+            if (!currentRoster['QB']) needed.push("1 QB");
+
+            let openRBs = 0;
+            if (!currentRoster['RB1']) openRBs++;
+            if (!currentRoster['RB2']) openRBs++;
+            if (openRBs > 0) needed.push(`${openRBs} RB`);
+
+            let openWRs = 0;
+            if (!currentRoster['WR1']) openWRs++;
+            if (!currentRoster['WR2']) openWRs++;
+            if (openWRs > 0) needed.push(`${openWRs} WR`);
+
+            if (!currentRoster['TE']) needed.push("1 TE");
+            if (!currentRoster['FLEX']) needed.push("1 FLEX");
+            if (!currentRoster['DST']) needed.push("1 D/ST");
+            if (!currentRoster['K']) needed.push("1 K");
+
+            if (needed.length === 0) return "Roster Full (9/9)";
+            return needed.join(", ");
         }
 
         async function openPlayerModalAuto(targetSlot) {
             if (!currentSpinTeam) {
-                currentSpinTeam = currentWeekTeams[Math.floor(Math.random() * currentWeekTeams.length)];
+                showToast("Please spin the wheel first!");
+                return;
             }
             currentActiveSlot = targetSlot;
 
@@ -1154,8 +1309,12 @@
             const logoImg = document.getElementById('modal-team-logo-img');
             const sportTag = document.getElementById('modal-sport-tag');
 
-            document.getElementById('modal-game-datetime').innerText = currentSpinTeam.datetime || 'Kickoff Scheduled';
-            document.getElementById('modal-game-matchup').innerText = currentSpinTeam.matchup || 'vs. Opponent';
+            const userRoster = (currentLeague && currentLeague.rosters[currentUser.name]) || {};
+            const neededText = calculatePositionsNeeded(userRoster);
+            document.getElementById('modal-positions-needed').innerText = neededText;
+
+            document.getElementById('modal-game-datetime').innerText = currentSpinTeam.datetime;
+            document.getElementById('modal-game-matchup').innerText = currentSpinTeam.matchup;
 
             logoImg.src = currentSpinTeam.logoUrl;
             logoImg.classList.remove('hidden');
@@ -1190,13 +1349,16 @@
                             if (group.items) {
                                 group.items.forEach((athlete, index) => {
                                     const rawPos = athlete.position ? athlete.position.abbreviation : 'FLEX';
+                                    
                                     const strictlyExcluded = [
                                         'P', 'PUNTER', 'LS', 'LONG SNAPPER', 'H', 'PR', 'KR',
                                         'G', 'C', 'OT', 'LT', 'RT', 'OL', 
                                         'DE', 'DT', 'DL', 'LB', 'ILB', 'OLB', 'MLB', 'CB', 'S', 'DB', 'FS', 'SS', 'NT'
                                     ];
 
-                                    if (strictlyExcluded.includes(rawPos.toUpperCase())) return;
+                                    if (strictlyExcluded.includes(rawPos.toUpperCase())) {
+                                        return;
+                                    }
 
                                     let assignedPos = rawPos;
                                     if (['K', 'PK', 'KICKER', 'PLACEKICKER'].includes(rawPos.toUpperCase())) {
@@ -1272,7 +1434,6 @@
 
             loader.classList.add('hidden');
             let html = '';
-            const userRoster = currentLeague.rosters[currentUser.name] || {};
             const draftedNames = Object.values(userRoster).map(p => p.name);
 
             if (filteredPlayers.length === 0) {
@@ -1282,6 +1443,11 @@
 
             filteredPlayers.forEach(p => {
                 const alreadyOnRoster = draftedNames.includes(p.name);
+                const isDst = p.isDst || p.pos === 'DST';
+                const openSlots = getOpenSlotsForPosition(p.pos, isDst, userRoster);
+                
+                const isSlotAvailable = currentActiveSlot ? !userRoster[currentActiveSlot] : openSlots.length > 0;
+
                 let injuryBadge = '';
                 if (p.injury === 'Healthy') {
                     injuryBadge = `<span class="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-500/30">Healthy</span>`;
@@ -1295,10 +1461,10 @@
                     ? `<span class="bg-indigo-500/20 text-indigo-300 text-[9px] font-black uppercase px-2 py-0.5 rounded border border-indigo-500/40 tracking-wider flex items-center gap-1"><i class="fas fa-star text-[8px] text-indigo-400"></i> Starter</span>` 
                     : '';
 
-                const isDst = p.isDst || p.pos === 'DST';
+                const canDraft = !alreadyOnRoster && isSlotAvailable;
 
                 html += `
-                    <div class="glass-panel p-3.5 rounded-xl flex justify-between items-center border border-slate-700/60 ${alreadyOnRoster ? 'opacity-50' : 'hover:border-emerald-500'} transition-all">
+                    <div class="glass-panel p-3.5 rounded-xl flex justify-between items-center border border-slate-700/60 ${!canDraft ? 'opacity-50' : 'hover:border-emerald-500'} transition-all">
                         <div class="flex items-center gap-3">
                             <div class="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center p-1.5 flex-shrink-0">
                                 <img src="${p.logoUrl}" class="w-full h-full object-contain" alt="logo">
@@ -1311,12 +1477,13 @@
                                     ${!isDst ? injuryBadge : ''}
                                 </div>
                                 <p class="text-[11px] text-slate-400">
-                                    ${isDst ? 'Full Team Defense & Return Unit • ' : ''}Last Week: <span class="text-slate-300 font-bold">${p.lastWeek} pts</span> • Proj: <span class="text-emerald-400 font-bold">${p.projected} pts</span> ${alreadyOnRoster ? '<span class="text-amber-400 font-bold ml-1">(On Roster)</span>' : ''}
+                                    ${isDst ? 'Full Team Defense & Return Unit • ' : ''}Last Week: <span class="text-slate-300 font-bold">${p.lastWeek} pts</span> • Proj: <span class="text-emerald-400 font-bold">${p.projected} pts</span> 
+                                    ${alreadyOnRoster ? '<span class="text-amber-400 font-bold ml-1">(On Roster)</span>' : (!isSlotAvailable ? '<span class="text-rose-400 font-bold ml-1">(Position Filled)</span>' : '')}
                                 </p>
                             </div>
                         </div>
-                        <button ${alreadyOnRoster ? 'disabled' : `onclick="selectPlayer('${p.name.replace(/'/g, "\\'")}', '${p.pos}', ${p.projected})"`} class="px-3.5 py-2 rounded-lg text-xs font-bold ${alreadyOnRoster ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'} transition-colors ml-2 flex-shrink-0">
-                            ${alreadyOnRoster ? 'On Roster' : 'Select'}
+                        <button ${!canDraft ? 'disabled' : `onclick="selectPlayer('${p.name.replace(/'/g, "\\'")}', '${p.pos}', ${p.projected})"`} class="px-3.5 py-2 rounded-lg text-xs font-bold ${!canDraft ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'} transition-colors ml-2 flex-shrink-0">
+                            ${alreadyOnRoster ? 'On Roster' : (!isSlotAvailable ? 'Filled' : 'Select')}
                         </button>
                     </div>
                 `;
@@ -1334,21 +1501,28 @@
                 currentLeague.rosters[currentUser.name] = {};
             }
 
+            const currentRoster = currentLeague.rosters[currentUser.name];
             let targetSlot = currentActiveSlot;
+
             if (!targetSlot) {
                 if (pos === 'DST' || name === "Defense/Special Teams") {
-                    targetSlot = 'DST';
+                    targetSlot = !currentRoster['DST'] ? 'DST' : null;
                 } else if (pos === 'K') {
-                    targetSlot = 'K';
+                    targetSlot = !currentRoster['K'] ? 'K' : null;
+                } else if (pos === 'QB') {
+                    targetSlot = !currentRoster['QB'] ? 'QB' : null;
+                } else if (pos === 'TE') {
+                    targetSlot = !currentRoster['TE'] ? 'TE' : (!currentRoster['FLEX'] ? 'FLEX' : null);
                 } else if (pos === 'RB' || pos === 'FB') {
-                    targetSlot = !currentLeague.rosters[currentUser.name]['RB1'] ? 'RB1' : (!currentLeague.rosters[currentUser.name]['RB2'] ? 'RB2' : 'FLEX');
+                    targetSlot = !currentRoster['RB1'] ? 'RB1' : (!currentRoster['RB2'] ? 'RB2' : (!currentRoster['FLEX'] ? 'FLEX' : null));
                 } else if (pos === 'WR') {
-                    targetSlot = !currentLeague.rosters[currentUser.name]['WR1'] ? 'WR1' : (!currentLeague.rosters[currentUser.name]['WR2'] ? 'WR2' : 'FLEX');
-                } else if (!currentLeague.rosters[currentUser.name][pos]) {
-                    targetSlot = pos;
-                } else {
-                    targetSlot = 'FLEX';
+                    targetSlot = !currentRoster['WR1'] ? 'WR1' : (!currentRoster['WR2'] ? 'WR2' : (!currentRoster['FLEX'] ? 'FLEX' : null));
                 }
+            }
+
+            if (!targetSlot || currentRoster[targetSlot]) {
+                showToast(`Position slot ${targetSlot || pos} is already locked and cannot be overwritten.`);
+                return;
             }
 
             const exactLogo = getTeamLogoUrl(currentSpinTeam.name, currentSpinTeam.logoUrl);
@@ -1378,7 +1552,7 @@
         }
 
         function updateFieldUI() {
-            const roster = currentLeague.rosters[currentUser.name] || {};
+            const roster = (currentLeague && currentLeague.rosters[currentUser.name]) || {};
             let filled = 0;
 
             POSITIONS.forEach(pos => {
@@ -1388,7 +1562,7 @@
                     filled++;
                     el.classList.add('filled');
                     const displayName = roster[pos].name === "Defense/Special Teams" ? `${roster[pos].team.split(' ').pop()} D/ST` : roster[pos].name;
-                    el.innerHTML = `<span class="text-[8px] text-emerald-400">${pos}</span><span class="text-[9px] font-bold leading-tight line-clamp-2 px-0.5 text-center">${displayName}</span>`;
+                    el.innerHTML = `<span class="text-[8px] text-emerald-400 font-mono">${pos}</span><span class="text-[9px] font-black leading-tight line-clamp-2 px-0.5 text-center text-white">${displayName}</span>`;
                 } else {
                     el.classList.remove('filled');
                     el.innerHTML = pos;
@@ -1399,7 +1573,7 @@
         }
 
         function renderMyTeam() {
-            const roster = currentLeague.rosters[currentUser.name] || {};
+            const roster = (currentLeague && currentLeague.rosters[currentUser.name]) || {};
             const listEl = document.getElementById('roster-list');
             let html = '';
 
@@ -1429,8 +1603,10 @@
         }
 
         function respinSlot(pos) {
+            if (!currentLeague.rosters[currentUser.name] || !currentLeague.rosters[currentUser.name][pos]) return;
             delete currentLeague.rosters[currentUser.name][pos];
             saveLeaguesStorage();
+            updateFieldUI();
             switchTab('spin');
             showToast(`Slot ${pos} cleared. Spin the wheel to draft a new player!`);
         }
@@ -1522,7 +1698,7 @@
 
             if (isMondayNightFootballFinal) {
                 statusEl.className = "w-full text-center py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider bg-emerald-950/80 border border-emerald-600/50 text-emerald-300";
-                statusEl.innerText = `Week ${activeSlateWeek - 1} Final • Settled After Monday Night Football`;
+                statusEl.innerText = `Week ${activeSlateWeek} Final • Official Results Settled`;
 
                 banner.classList.remove('hidden');
                 if (myTotal >= oppTotal) {
@@ -1533,9 +1709,13 @@
                     banner.className = "w-full text-center py-4 px-4 rounded-xl font-black text-2xl uppercase tracking-wider shadow-lg bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center gap-3 animate-pulse";
                     banner.innerHTML = `<i class="fas fa-hand-middle-finger text-3xl"></i> LOSER!`;
                 }
+            } else if (isCurrentWeekStarted) {
+                statusEl.className = "w-full text-center py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider bg-amber-950/80 border border-amber-600/50 text-amber-300";
+                statusEl.innerText = `Week ${activeSlateWeek} In Progress • Final Results Settle After Monday Night Football`;
+                banner.classList.add('hidden');
             } else {
-                statusEl.className = "w-full text-center py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider bg-slate-900 border border-slate-700 text-amber-400";
-                statusEl.innerText = `Week ${activeSlateWeek} Active • Matchup Animations Settle After MNF`;
+                statusEl.className = "w-full text-center py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider bg-slate-900 border border-slate-700 text-slate-400";
+                statusEl.innerText = `Week ${activeSlateWeek} Pre-Game • Kickoffs Scheduled • Animations Locked Until MNF`;
                 banner.classList.add('hidden');
             }
         }
