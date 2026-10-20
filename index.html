@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Any Given Spinday</title>
+    <title>AnyGivenSpinday - Fantasy Football Roulette</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -90,13 +90,13 @@
 
     <div id="auth-loading" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900">
         <i class="fas fa-football-ball text-5xl text-emerald-500 animate-bounce mb-4"></i>
-        <h2 class="text-2xl font-bold tracking-tight">Any Given Spinday</h2>
+        <h2 class="text-2xl font-bold tracking-tight">AnyGivenSpinday</h2>
         <p class="text-slate-400 mt-2">Connecting to league servers...</p>
     </div>
 
     <header class="glass-panel sticky top-0 z-40 px-4 py-3 flex justify-between items-center hidden" id="main-header">
         <div class="flex items-center gap-2 text-emerald-400 font-black text-xl cursor-pointer" onclick="navigate('lobby')">
-            <i class="fas fa-sync-alt"></i> Any Given Spinday
+            <i class="fas fa-sync-alt"></i> AnyGivenSpinday
         </div>
         <div class="flex items-center gap-4">
             <button onclick="navigate('lobby')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-md border border-slate-700 transition-colors">
@@ -115,7 +115,7 @@
                 <div class="glass-panel rounded-2xl p-6 shadow-2xl h-fit">
                     <i class="fas fa-trophy text-4xl text-emerald-500 mb-4 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]"></i>
                     <h1 class="text-2xl font-black mb-2">New League</h1>
-                    <p class="text-slate-400 mb-6 text-xs">Create a new Any Given Spinday league or join your friends.</p>
+                    <p class="text-slate-400 mb-6 text-xs">Create a new AnyGivenSpinday league or join your friends.</p>
                     
                     <div class="mb-4 text-left">
                         <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Your Manager Name</label>
@@ -442,7 +442,7 @@
                 }
                 renderLeaguesHub(userLeaguesData);
             } catch (e) {
-                console.error("Error loading user leagues (Check Firestore security rules):", e);
+                console.error("Error loading user leagues:", e);
             }
         }
 
@@ -515,7 +515,7 @@
                 joinLeagueLogic(newLeagueId, name);
             } catch (err) {
                 console.error(err);
-                showToast("Error creating league (Check Firestore rules)", "error");
+                showToast("Error creating league", "error");
             }
         };
 
@@ -996,5 +996,5 @@
         window.addEventListener('load', init);
     </script>
 </body>
-</html> 
- 
+</html>
+
