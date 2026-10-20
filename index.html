@@ -31,11 +31,12 @@
             background: #020617;
             border-radius: 0.75rem;
             border: 1px solid #1e293b;
+            perspective: 800px;
         }
         .spinner-track {
             display: flex;
             flex-direction: column;
-            transition: transform 4s cubic-bezier(0.15, 0.85, 0.35, 1);
+            will-change: transform, filter;
         }
         .spinner-item {
             height: 120px;
@@ -49,6 +50,14 @@
             color: #34d399;
             text-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
             text-transform: uppercase;
+        }
+        .spinner-shaking {
+            animation: violentShake 0.08s infinite alternate ease-in-out;
+        }
+        @keyframes violentShake {
+            0% { transform: translate(-3px, 2px) rotate(-0.5deg); }
+            50% { transform: translate(3px, -2px) rotate(0.5deg); }
+            100% { transform: translate(-2px, -3px) rotate(-0.3deg); }
         }
         .football-field {
             background: linear-gradient(to bottom, #047857, #065f46);
@@ -412,7 +421,6 @@
             try {
                 let teamsList = [];
                 
-                // Fetch NFL Teams & Scoreboard using exact endpoints from reference docs
                 const nflTeamsRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams');
                 const nflScoreRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard');
                 
@@ -431,7 +439,6 @@
                         const name = t.displayName || t.name;
                         const logoUrl = t.logos && t.logos.length > 0 ? t.logos[0].href : `https://a.espncdn.com/i/teamlogos/nfl/500/${t.abbreviation.toLowerCase()}.png`;
                         
-                        // Find matching event for matchup and schedule
                         let matchup = "vs. Bye Week";
                         let datetime = "Sun • 1:00 PM EDT";
                         const matchedEvent = nflEvents.find(ev => ev.competitions[0].competitors.some(c => c.team.id === teamId));
@@ -462,7 +469,6 @@
                     });
                 }
 
-                // Fetch College Football Teams & Scoreboard
                 const ncaafTeamsRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=50');
                 const ncaafScoreRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard');
 
@@ -518,7 +524,6 @@
                 }
                 renderSpinnerTrack();
             } catch (err) {
-                // Fallback pool with current verified data
                 currentWeekTeams = [
                     { name: "Kansas City Chiefs", id: "12", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png", matchup: "vs. Las Vegas Raiders", datetime: "Sun • 4:25 PM EDT" },
                     { name: "San Francisco 49ers", id: "25", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png", matchup: "@ Dallas Cowboys", datetime: "Sun • 8:20 PM EDT" },
@@ -705,35 +710,61 @@
             const track = document.getElementById('spinner-track');
             if (!track || currentWeekTeams.length === 0) return;
             let html = '';
-            currentWeekTeams.forEach(t => {
-                html += `<div class="spinner-item"><div class="flex items-center gap-2 mb-1"><img src="${t.logoUrl}" class="w-8 h-8 object-contain" alt="logo"><span>${t.name}</span></div><span class="text-xs text-slate-400">${t.matchup}</span></div>`;
-            });
-            currentWeekTeams.slice(0, 5).forEach(t => {
-                html += `<div class="spinner-item"><div class="flex items-center gap-2 mb-1"><img src="${t.logoUrl}" class="w-8 h-8 object-contain" alt="logo"><span>${t.name}</span></div><span class="text-xs text-slate-400">${t.matchup}</span></div>`;
-            });
+            for (let repeat = 0; repeat < 5; repeat++) {
+                currentWeekTeams.forEach(t => {
+                    html += `<div class="spinner-item"><div class="flex items-center gap-2 mb-1"><img src="${t.logoUrl}" class="w-8 h-8 object-contain drop-shadow" alt="logo"><span>${t.name}</span></div><span class="text-xs text-slate-400">${t.matchup}</span></div>`;
+                });
+            }
             track.innerHTML = html;
         }
 
         function startSpin() {
             if (currentWeekTeams.length === 0) return;
             const btn = document.getElementById('spin-btn');
-            btn.disabled = true;
-
+            const container = document.getElementById('spinner-container');
             const track = document.getElementById('spinner-track');
-            const winningIndex = Math.floor(Math.random() * currentWeekTeams.length);
-            const itemHeight = 120;
-            const targetOffset = -(winningIndex * itemHeight);
 
-            track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.35, 1)';
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const itemHeight = 120;
+            const totalTeams = currentWeekTeams.length;
+            const winningIndex = Math.floor(Math.random() * totalTeams);
+            const extraLoops = 4;
+            const targetIndex = (totalTeams * extraLoops) + winningIndex;
+            const targetOffset = -(targetIndex * itemHeight);
+
+            // Reset position immediately before launching aggressive spin
+            track.style.transition = 'none';
+            track.style.transform = 'translateY(0px)';
+            track.style.filter = 'none';
+            container.classList.remove('spinner-shaking');
+
+            // Force reflow
+            void track.offsetWidth;
+
+            // Aggressive acceleration with overshoot bounce
+            track.style.transition = 'transform 3.8s cubic-bezier(0.08, 0.95, 0.12, 1.08), filter 3.8s ease-out';
             track.style.transform = `translateY(${targetOffset}px)`;
+            track.style.filter = 'blur(2.5px)';
+            container.classList.add('spinner-shaking');
+
+            setTimeout(() => {
+                track.style.filter = 'none';
+            }, 2700);
+
+            setTimeout(() => {
+                container.classList.remove('spinner-shaking');
+            }, 3200);
 
             setTimeout(() => {
                 currentSpinTeam = currentWeekTeams[winningIndex];
                 btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
                 showToast(`Landed on ${currentSpinTeam.name} (${currentSpinTeam.matchup})!`);
                 highlightEmptyPositions();
                 openPlayerModalAuto(null);
-            }, 4100);
+            }, 3850);
         }
 
         function highlightEmptyPositions() {
