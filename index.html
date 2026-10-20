@@ -165,7 +165,6 @@
 
     <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex flex-col relative">
 
-        <!-- LOBBY VIEW -->
         <div id="view-lobby" class="flex flex-col flex-1 py-2">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="glass-panel rounded-2xl p-6 shadow-2xl h-fit">
@@ -218,7 +217,6 @@
             </div>
         </div>
 
-        <!-- LEAGUE VIEW -->
         <div id="view-league" class="flex flex-col flex-1 hidden">
             <div class="mb-6 bg-slate-800/50 rounded-xl p-4 border border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
@@ -243,7 +241,7 @@
             </div>
 
             <div class="flex-1 relative min-h-[450px]">
-                <!-- TAB: SPIN DRAFT -->
+                <!-- TAB 1: SPIN DRAFT -->
                 <div id="tab-content-spin" class="absolute inset-0 flex flex-col">
                     <div class="glass-panel rounded-xl p-6 flex flex-col items-center justify-center flex-1 text-center">
                         <div class="flex items-center gap-2 mb-2">
@@ -299,7 +297,7 @@
                     </div>
                 </div>
 
-                <!-- TAB: MY TEAM -->
+                <!-- TAB 2: MY TEAM -->
                 <div id="tab-content-team" class="absolute inset-0 flex flex-col hidden overflow-y-auto pb-10">
                     <div class="flex justify-between items-end mb-4">
                         <h3 class="text-2xl font-black">My Roster</h3>
@@ -323,7 +321,7 @@
                     </div>
                 </div>
 
-                <!-- TAB: MATCHUP -->
+                <!-- TAB 3: MATCHUP -->
                 <div id="tab-content-matchup" class="absolute inset-0 flex flex-col hidden overflow-y-auto pb-10">
                     <h3 class="text-2xl font-black mb-6">Weekly Matchup</h3>
                     <div class="glass-panel rounded-xl p-6 flex flex-col items-center justify-between gap-6 mb-6">
@@ -355,7 +353,7 @@
                     </div>
                 </div>
 
-                <!-- TAB: STANDINGS -->
+                <!-- TAB 4: STANDINGS -->
                 <div id="tab-content-standings" class="absolute inset-0 flex flex-col hidden overflow-y-auto">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-2xl font-black">League Standings</h3>
@@ -1108,6 +1106,7 @@
                 ]
             };
 
+            // Alternating sports ensures balanced mix between College Football and NFL
             POSITIONS.forEach((pos, idx) => {
                 const targetSport = (idx % 2 === 0) ? 'college-football' : 'nfl';
                 const candidatePool = samplePicks[pos] || samplePicks['FLEX'];
@@ -1116,9 +1115,9 @@
                     ? matchedSportCandidates[Math.floor(Math.random() * matchedSportCandidates.length)]
                     : candidatePool[Math.floor(Math.random() * candidatePool.length)];
 
-                const liveScore = +(selected.proj * (0.85 + Math.random() * 0.35)).toFixed(1);
                 const exactLogo = getTeamLogoUrl(selected.team);
 
+                // Initial score begins at 0.0 before kickoff
                 botRoster[pos] = {
                     name: selected.name,
                     pos: selected.pos,
@@ -1127,7 +1126,7 @@
                     logoUrl: exactLogo,
                     matchup: "vs. Opponent",
                     projected: selected.proj,
-                    score: liveScore
+                    score: 0.0
                 };
             });
 
@@ -1201,7 +1200,7 @@
         }
 
         function highlightEmptyPositions() {
-            const roster = currentLeague.rosters[currentUser.name] || {};
+            const roster = (currentLeague && currentLeague.rosters[currentUser.name]) || {};
             POSITIONS.forEach(pos => {
                 const el = document.getElementById(`field-pos-${pos}`);
                 if (!roster[pos]) {
@@ -1328,6 +1327,7 @@
 
             let players = [];
 
+            // Single unified Team Defense/Special Teams card bundled under the team
             players.push({
                 name: "Defense/Special Teams",
                 pos: "DST",
@@ -1593,7 +1593,7 @@
                         <div class="col-span-2 text-center font-bold text-emerald-400">${p ? p.projected.toFixed(1) : '-'}</div>
                         <div class="col-span-2 text-center font-black text-white">${p ? p.score.toFixed(1) : '-'}</div>
                         <div class="col-span-2 text-center">
-                            ${p ? `<button onclick="respinSlot('${pos}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1 rounded transition-colors"><i class="fas fa-sync-alt mr-1"></i> Re-spin</button>` : `<button onclick="openPlayerModalDirect('${pos}')" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded transition-colors"><i class="fas fa-plus mr-1"></i> Draft</button>`}
+                            ${p ? `<button onclick="respinSlot('${pos}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1 rounded transition-colors"><i class="fas fa-sync-alt mr-1"></i> Re-spin</button>` : `<button onclick="handleFieldSlotClick('${pos}')" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded transition-colors"><i class="fas fa-plus mr-1"></i> Draft</button>`}
                         </div>
                     </div>
                 `;
@@ -1619,6 +1619,18 @@
                 roster[pos].score = pts;
                 total += pts;
             });
+
+            // Simulate live scores for AI rival during active games
+            const aiWeekKey = `week_${activeSlateWeek}`;
+            if (currentLeague.aiRosters && currentLeague.aiRosters[aiWeekKey]) {
+                const aiRoster = currentLeague.aiRosters[aiWeekKey];
+                Object.keys(aiRoster).forEach(pos => {
+                    const p = aiRoster[pos];
+                    const pts = +(p.projected * (0.8 + Math.random() * 0.45)).toFixed(1);
+                    p.score = pts;
+                });
+            }
+
             saveLeaguesStorage();
             renderMyTeam();
             showToast("Live fantasy stats updated successfully!");
@@ -1635,7 +1647,7 @@
             const myRoster = currentLeague.rosters[myName] || {};
             const firstPlayer = Object.values(myRoster)[0];
             const scheduleText = firstPlayer && firstPlayer.datetime ? `${firstPlayer.datetime} • ${firstPlayer.matchup}` : (currentWeekTeams.length > 0 ? `${currentWeekTeams[0].datetime} • ${currentWeekTeams[0].matchup}` : "Sun, Oct 25 • 1:00 PM EDT");
-            document.getElementById('matchup-datetime-text').innerText = scheduleText;
+            document.getElementById('matchup-schedule-header').innerHTML = `<i class="fas fa-calendar-alt"></i> <span>${scheduleText}</span>`;
 
             const aiWeekKey = `week_${activeSlateWeek}`;
             const oppRoster = (oppName === "AI Rival") 
@@ -1646,7 +1658,6 @@
             document.getElementById('matchup-my-score').innerText = myTotal.toFixed(1);
 
             let oppTotal = Object.values(oppRoster).reduce((sum, p) => sum + (p.score || 0), 0);
-            if (oppTotal === 0 && oppName === "AI Rival") oppTotal = 94.2;
             document.getElementById('matchup-opp-score').innerText = oppTotal.toFixed(1);
 
             let myRosterHtml = `<div class="font-bold text-slate-400 mb-2">${myName}'s Lineup</div>`;
@@ -1735,7 +1746,7 @@
         }
 
         function renderStandings() {
-            const standings = currentLeague.standings || {};
+            const standings = (currentLeague && currentLeague.standings) || {};
             const tbody = document.getElementById('standings-body');
             let html = '';
             let sorted = Object.keys(standings).sort((a,b) => standings[b].wins - standings[a].wins);
