@@ -423,8 +423,9 @@
 
     <!-- LEAGUE SETTINGS MODAL -->
     <div id="settings-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel rounded-2xl w-full max-w-md p-6 flex flex-col shadow-2xl border border-slate-700">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
+        <div class="glass-panel rounded-2xl w-full max-w-md max-h-[88vh] flex flex-col shadow-2xl border border-slate-700 overflow-hidden">
+            <!-- Modal Header (Fixed / Non-scrolling) -->
+            <div class="p-4 sm:p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/80 flex-shrink-0">
                 <div class="flex items-center gap-2.5">
                     <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
                         <i class="fas fa-crown"></i>
@@ -439,7 +440,8 @@
                 </button>
             </div>
 
-            <div class="space-y-4">
+            <!-- Scrollable Settings Body -->
+            <div class="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 pr-2">
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Assign Commissioner</label>
                     <select id="settings-commish-select" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-semibold"></select>
@@ -508,7 +510,8 @@
                 </div>
             </div>
 
-            <div class="flex gap-3 mt-6 pt-3 border-t border-slate-800">
+            <!-- Modal Footer (Fixed / Non-scrolling) -->
+            <div class="p-4 sm:p-5 border-t border-slate-800 bg-slate-900/80 flex gap-3 flex-shrink-0">
                 <button onclick="closeSettingsModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-lg text-xs transition-colors">
                     Cancel
                 </button>
