@@ -245,6 +245,12 @@
                     <p class="text-slate-400 text-sm mt-1 flex items-center gap-3">
                         <span>ID: <span id="league-id-display" class="font-mono text-emerald-300 select-all"></span>
                         <button onclick="copyToClipboard(document.getElementById('league-id-display').innerText)" class="hover:text-white ml-1" title="Copy ID"><i class="fas fa-copy"></i></button></span>
+                        <span id="commish-badge-header" class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold flex items-center gap-1">
+                            <i class="fas fa-crown text-[10px]"></i> Commish: <span id="commish-name-display">-</span>
+                        </span>
+                        <button onclick="openSettingsModal()" class="text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors">
+                            <i class="fas fa-cog"></i> Settings
+                        </button>
                         <button onclick="promptDeleteCurrentLeague()" class="text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-xs px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors">
                             <i class="fas fa-trash-alt"></i> Delete League
                         </button>
@@ -266,8 +272,17 @@
                             <span class="bg-slate-800 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-slate-700" id="week-display-badge">Week 8</span>
                             <h3 class="text-2xl font-black">Weekly Spin Draft</h3>
                         </div>
-                        <p class="text-slate-400 text-sm mb-8 max-w-md">30 entirely randomized teams (15 NFL + 15 NCAA) with upcoming live matchups. Spin to draft players!</p>
+                        <p class="text-slate-400 text-sm mb-4 max-w-md">30 entirely randomized teams (15 NFL + 15 NCAA) with upcoming live matchups. Spin to draft players!</p>
                         
+                        <!-- Commissioner Team Pool Re-roll Control -->
+                        <div id="commish-reroll-container" class="mb-6 hidden">
+                            <button id="commish-reroll-btn" onclick="commishRerollTeamPool()" class="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black text-xs px-4 py-2 rounded-xl shadow-lg shadow-amber-900/30 transition-all flex items-center gap-2">
+                                <i class="fas fa-dice text-sm"></i>
+                                <span>Commissioner: Re-roll 30 Weekly Teams</span>
+                            </button>
+                            <p id="commish-reroll-subtext" class="text-[10px] text-slate-400 mt-1">Available prior to week kickoff (0 in-progress or completed games).</p>
+                        </div>
+
                         <div class="bg-slate-900 rounded-xl p-6 border border-slate-700 w-full max-w-md mb-8 relative shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                             <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-slate-900 text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-widest z-10 whitespace-nowrap">
                                 30 Randomized Teams (15 NFL + 15 NCAA)
@@ -405,6 +420,104 @@
         </div>
 
     </main>
+
+    <!-- LEAGUE SETTINGS MODAL -->
+    <div id="settings-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel rounded-2xl w-full max-w-md p-6 flex flex-col shadow-2xl border border-slate-700">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-base text-white">League Settings</h3>
+                        <p class="text-xs text-slate-400">Manage league governance & commissioner controls</p>
+                    </div>
+                </div>
+                <button onclick="closeSettingsModal()" class="w-7 h-7 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Assign Commissioner</label>
+                    <select id="settings-commish-select" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-semibold"></select>
+                    <p class="text-[11px] text-slate-400 mt-1.5">The commissioner has the ability to re-roll the 30 randomized teams before any games start for the week.</p>
+                </div>
+
+                <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-300 space-y-1.5">
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Current Commissioner:</span>
+                        <span id="settings-current-commish" class="font-bold text-amber-400">None</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-400">Your Status:</span>
+                        <span id="settings-user-status" class="font-bold text-emerald-400">Member</span>
+                    </div>
+                </div>
+
+                <!-- Custom Scoring Rules Section -->
+                <div class="border-t border-slate-800 pt-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                            <i class="fas fa-calculator text-[11px]"></i> Custom Scoring Rules
+                        </h4>
+                        <span id="settings-scoring-locked-badge" class="text-[9px] bg-slate-800 text-slate-400 font-bold px-2 py-0.5 rounded border border-slate-700">Commish Only</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mb-3">Tune league multipliers for passing, rushing, receiving, field goals, and team defenses.</p>
+
+                    <div class="grid grid-cols-2 gap-2.5 text-xs">
+                        <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Passing TD (Pts)</label>
+                            <input type="number" step="1" id="scoring-pass-td" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white text-xs font-mono font-bold focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Rush/Rec TD (Pts)</label>
+                            <input type="number" step="1" id="scoring-rush-rec-td" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white text-xs font-mono font-bold focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Pass Yards (Pts/Yd)</label>
+                            <input type="number" step="0.01" id="scoring-pass-yd" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white text-xs font-mono font-bold focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Rush/Rec Yd (Pts/Yd)</label>
+                            <input type="number" step="0.01" id="scoring-rush-rec-yd" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white text-xs font-mono font-bold focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Receptions (PPR)</label>
+                            <select id="scoring-ppr" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white text-xs font-bold focus:outline-none focus:border-emerald-500">
+                                <option value="0">Standard (0.0 PPR)</option>
+                                <option value="0.5">Half PPR (0.5 PPR)</option>
+                                <option value="1.0">Full PPR (1.0 PPR)</option>
+                            </select>
+                        </div>
+                        <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Interception (Pts)</label>
+                            <input type="number" step="1" id="scoring-int" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white text-xs font-mono font-bold focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Field Goal (Pts)</label>
+                            <input type="number" step="1" id="scoring-fg" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white text-xs font-mono font-bold focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-xl">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">D/ST Turnover/Sack</label>
+                            <input type="number" step="1" id="scoring-dst-turnover" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white text-xs font-mono font-bold focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6 pt-3 border-t border-slate-800">
+                <button onclick="closeSettingsModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-lg text-xs transition-colors">
+                    Cancel
+                </button>
+                <button id="settings-save-btn" onclick="saveLeagueSettings()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg text-xs transition-colors shadow-lg shadow-emerald-900/40">
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- CONFIRM DELETE MODAL -->
     <div id="delete-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
@@ -654,12 +767,56 @@
         let activeModalPositionFilter = 'ALL';
         let cachedModalRawPlayers = [];
 
-        // Shared cache for rosters fetched from ESPN endpoints
+        // Default Fantasy League Scoring Rules
+        const DEFAULT_SCORING_RULES = {
+            passTd: 4,
+            rushRecTd: 6,
+            passYd: 0.04,     // 1 pt per 25 yds
+            rushRecYd: 0.10,  // 1 pt per 10 yds
+            ppr: 0.5,         // Half-PPR default
+            interception: -2,
+            fieldGoal: 3,
+            dstTurnover: 2
+        };
+
+        function getLeagueScoringRules() {
+            if (!currentLeague) return DEFAULT_SCORING_RULES;
+            if (!currentLeague.scoringRules) {
+                currentLeague.scoringRules = { ...DEFAULT_SCORING_RULES };
+            }
+            return currentLeague.scoringRules;
+        }
+
+        function calculateCustomFantasyPoints(baseProjection, position, rules) {
+            const r = rules || getLeagueScoringRules();
+            let multiplier = 1.0;
+
+            if (position === 'QB') {
+                const tdRatio = (r.passTd / 4.0);
+                const ydRatio = (r.passYd / 0.04);
+                multiplier = (tdRatio * 0.5) + (ydRatio * 0.5);
+            } else if (position === 'RB' || position === 'FB' || position === 'WR' || position === 'TE') {
+                const pprBoost = (r.ppr - 0.5) * 3.5;
+                const tdRatio = (r.rushRecTd / 6.0);
+                const ydRatio = (r.rushRecYd / 0.10);
+                multiplier = (tdRatio * 0.45) + (ydRatio * 0.55);
+                return Math.max(1.0, +(baseProjection * multiplier + pprBoost).toFixed(1));
+            } else if (position === 'K') {
+                multiplier = (r.fieldGoal / 3.0);
+            } else if (position === 'DST') {
+                multiplier = (r.dstTurnover / 2.0);
+            }
+
+            return Math.max(1.0, +(baseProjection * multiplier).toFixed(1));
+        }
+
+        let poolNflEligible = [];
+        let poolNcaafEligible = [];
+
         const TEAM_ROSTER_CACHE = {};
 
         const POSITIONS = ['QB', 'RB1', 'RB2', 'WR1', 'WR2', 'TE', 'FLEX', 'DST', 'K'];
 
-        // Helper to retrieve current manager's weekly re-spin balance
         function getManagerRespins() {
             if (!currentLeague) return 3;
             if (!currentLeague.respins) currentLeague.respins = {};
@@ -883,7 +1040,6 @@
 
                 isCurrentWeekStarted = (inProgressCount > 0 || finishedCount > 0);
 
-                // When this week's games are concluded, advance targetWeek to upcoming slate
                 let targetWeek = currentWeekNum;
                 if (finishedCount > 0 && pendingCount === 0 && inProgressCount === 0) {
                     targetWeek = currentWeekNum + 1;
@@ -1006,9 +1162,11 @@
                     });
                 }
 
-                // Filter teams with upcoming matches and draw 15 random NFL + 15 random NCAA (30 Total Teams)
                 const nflPlayingThisWeek = allNflTeams.filter(t => t.sport === 'nfl' && !t.matchup.includes("Bye Week"));
                 const ncaafPlayingThisWeek = allNcaafTeams.filter(t => t.sport === 'college-football' && !t.matchup.includes("Bye Week"));
+
+                poolNflEligible = nflPlayingThisWeek;
+                poolNcaafEligible = ncaafPlayingThisWeek;
 
                 if (nflPlayingThisWeek.length >= 15 && ncaafPlayingThisWeek.length >= 15) {
                     const random15NFL = shuffleArray(nflPlayingThisWeek).slice(0, 15);
@@ -1018,6 +1176,7 @@
                     throw new Error("Pool smaller than 15 each, using 30-team verified fallback");
                 }
                 renderSpinnerTrack();
+                updateCommissionerUI();
             } catch (err) {
                 const verified2026NFL = [
                     { name: "Chicago Bears", id: "3", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png", matchup: "vs. New England Patriots", datetime: "Thu, Oct 22 • 8:15 PM EDT" },
@@ -1059,8 +1218,12 @@
                     TEAM_REGISTRY[t.name] = { logoUrl: t.logoUrl, sport: t.sport, id: t.id };
                 });
 
+                poolNflEligible = verified2026NFL;
+                poolNcaafEligible = verified2026NCAA;
+
                 currentWeekTeams = shuffleArray([...verified2026NFL, ...verified2026NCAA]);
                 renderSpinnerTrack();
+                updateCommissionerUI();
             }
         }
 
@@ -1196,6 +1359,8 @@
                 name: leagueName,
                 createdAt: new Date().toISOString(),
                 currentWeek: activeSlateWeek,
+                commissioner: currentUser.name,
+                scoringRules: { ...DEFAULT_SCORING_RULES },
                 rosters: {
                     [currentUser.name]: {}
                 },
@@ -1215,7 +1380,7 @@
 
             renderLeaguesHub();
             enterLeague(leagueId);
-            showToast("Created League! Share League ID with friends to join.");
+            showToast("Created League! You are assigned as Commissioner.");
         }
 
         async function joinLeague() {
@@ -1257,6 +1422,11 @@
                 leagueToJoin.standings[currentUser.name] = { wins: 0, losses: 0, ties: 0, pts: 0 };
             }
 
+            if (!leagueToJoin.commissioner) {
+                const members = Object.keys(leagueToJoin.rosters);
+                leagueToJoin.commissioner = members[0] || currentUser.name;
+            }
+
             leaguesData[joinId] = leagueToJoin;
             saveLocalLeaguesStorage();
 
@@ -1269,6 +1439,190 @@
             showToast(`Joined "${leagueToJoin.name}"!`);
         }
 
+        function isUserCommissioner() {
+            if (!currentLeague) return false;
+            return (currentLeague.commissioner === currentUser.name);
+        }
+
+        function updateCommissionerUI() {
+            if (!currentLeague) return;
+
+            const commishName = currentLeague.commissioner || Object.keys(currentLeague.rosters || {})[0] || currentUser.name;
+            currentLeague.commissioner = commishName;
+
+            const commishBadge = document.getElementById('commish-name-display');
+            if (commishBadge) commishBadge.innerText = commishName;
+
+            const rerollContainer = document.getElementById('commish-reroll-container');
+            const rerollBtn = document.getElementById('commish-reroll-btn');
+            const rerollSubtext = document.getElementById('commish-reroll-subtext');
+
+            if (isUserCommissioner()) {
+                if (rerollContainer) rerollContainer.classList.remove('hidden');
+
+                if (isCurrentWeekStarted) {
+                    if (rerollBtn) {
+                        rerollBtn.disabled = true;
+                        rerollBtn.className = "bg-slate-800 text-slate-500 font-bold text-xs px-4 py-2 rounded-xl cursor-not-allowed border border-slate-700 flex items-center gap-2";
+                        rerollBtn.innerHTML = `<i class="fas fa-lock"></i> Pool Re-roll Locked (Week Games Active)`;
+                    }
+                    if (rerollSubtext) rerollSubtext.innerText = "Re-roll locked: games for the week are in-progress or completed.";
+                } else {
+                    if (rerollBtn) {
+                        rerollBtn.disabled = false;
+                        rerollBtn.className = "bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black text-xs px-4 py-2 rounded-xl shadow-lg shadow-amber-900/30 transition-all flex items-center gap-2 cursor-pointer";
+                        rerollBtn.innerHTML = `<i class="fas fa-dice text-sm"></i> <span>Commissioner: Re-roll 30 Weekly Teams</span>`;
+                    }
+                    if (rerollSubtext) rerollSubtext.innerText = "Pre-game window open: 0 games in progress or completed.";
+                }
+            } else {
+                if (rerollContainer) rerollContainer.classList.add('hidden');
+            }
+        }
+
+        async function commishRerollTeamPool() {
+            if (!isUserCommissioner()) {
+                showToast("Only the league commissioner can re-roll the weekly team pool.");
+                return;
+            }
+
+            if (isCurrentWeekStarted) {
+                showToast("Cannot re-roll: games for the week are already in-progress or completed!");
+                return;
+            }
+
+            if (poolNflEligible.length >= 15 && poolNcaafEligible.length >= 15) {
+                const random15NFL = shuffleArray(poolNflEligible).slice(0, 15);
+                const random15NCAA = shuffleArray(poolNcaafEligible).slice(0, 15);
+                currentWeekTeams = shuffleArray([...random15NFL, ...random15NCAA]);
+            } else {
+                currentWeekTeams = shuffleArray([...currentWeekTeams]);
+            }
+
+            currentLeague.weeklyTeamPool = currentWeekTeams;
+            saveLeaguesStorage();
+            renderSpinnerTrack();
+            showToast("Commissioner re-rolled 30 new weekly teams (15 NFL + 15 NCAA)!");
+        }
+
+        function openSettingsModal() {
+            if (!currentLeague) return;
+
+            const selectEl = document.getElementById('settings-commish-select');
+            const members = Object.keys(currentLeague.rosters || {});
+            const currentCommish = currentLeague.commissioner || members[0] || currentUser.name;
+            const isCommish = (currentUser.name === currentCommish);
+
+            let html = '';
+            members.forEach(m => {
+                html += `<option value="${m}" ${m === currentCommish ? 'selected' : ''}>${m} ${m === currentUser.name ? '(You)' : ''}</option>`;
+            });
+            selectEl.innerHTML = html;
+            selectEl.disabled = !isCommish;
+
+            document.getElementById('settings-current-commish').innerText = currentCommish;
+            document.getElementById('settings-user-status').innerText = isCommish ? 'Commissioner 👑' : 'Member';
+
+            const rules = getLeagueScoringRules();
+            document.getElementById('scoring-pass-td').value = rules.passTd;
+            document.getElementById('scoring-rush-rec-td').value = rules.rushRecTd;
+            document.getElementById('scoring-pass-yd').value = rules.passYd;
+            document.getElementById('scoring-rush-rec-yd').value = rules.rushRecYd;
+            document.getElementById('scoring-ppr').value = rules.ppr;
+            document.getElementById('scoring-int').value = rules.interception;
+            document.getElementById('scoring-fg').value = rules.fieldGoal;
+            document.getElementById('scoring-dst-turnover').value = rules.dstTurnover;
+
+            const scoringInputs = [
+                'scoring-pass-td', 'scoring-rush-rec-td', 'scoring-pass-yd', 'scoring-rush-rec-yd',
+                'scoring-ppr', 'scoring-int', 'scoring-fg', 'scoring-dst-turnover'
+            ];
+            scoringInputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.disabled = !isCommish;
+            });
+
+            const lockedBadge = document.getElementById('settings-scoring-locked-badge');
+            const saveBtn = document.getElementById('settings-save-btn');
+            if (isCommish) {
+                lockedBadge.className = "text-[9px] bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded border border-emerald-500/40";
+                lockedBadge.innerText = "Editable (Commissioner)";
+                if (saveBtn) saveBtn.classList.remove('hidden');
+            } else {
+                lockedBadge.className = "text-[9px] bg-slate-800 text-slate-400 font-bold px-2 py-0.5 rounded border border-slate-700";
+                lockedBadge.innerText = "View Only (Commissioner)";
+                if (saveBtn) saveBtn.classList.add('hidden');
+            }
+
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        function saveLeagueSettings() {
+            if (!currentLeague) return;
+            if (!isUserCommissioner()) {
+                showToast("Only the commissioner can modify league settings.");
+                return;
+            }
+
+            const newCommish = document.getElementById('settings-commish-select').value;
+            currentLeague.commissioner = newCommish;
+
+            const passTd = parseFloat(document.getElementById('scoring-pass-td').value) || 4;
+            const rushRecTd = parseFloat(document.getElementById('scoring-rush-rec-td').value) || 6;
+            const passYd = parseFloat(document.getElementById('scoring-pass-yd').value) || 0.04;
+            const rushRecYd = parseFloat(document.getElementById('scoring-rush-rec-yd').value) || 0.10;
+            const ppr = parseFloat(document.getElementById('scoring-ppr').value);
+            const interception = parseFloat(document.getElementById('scoring-int').value) || -2;
+            const fieldGoal = parseFloat(document.getElementById('scoring-fg').value) || 3;
+            const dstTurnover = parseFloat(document.getElementById('scoring-dst-turnover').value) || 2;
+
+            currentLeague.scoringRules = {
+                passTd,
+                rushRecTd,
+                passYd,
+                rushRecYd,
+                ppr: isNaN(ppr) ? 0.5 : ppr,
+                interception,
+                fieldGoal,
+                dstTurnover
+            };
+
+            if (currentLeague.rosters) {
+                Object.keys(currentLeague.rosters).forEach(mgr => {
+                    const r = currentLeague.rosters[mgr];
+                    Object.keys(r).forEach(pos => {
+                        const p = r[pos];
+                        if (p && p.projected) {
+                            p.projected = calculateCustomFantasyPoints(p.projected, p.pos, currentLeague.scoringRules);
+                        }
+                    });
+                });
+            }
+
+            if (currentLeague.aiRosters) {
+                Object.keys(currentLeague.aiRosters).forEach(week => {
+                    const r = currentLeague.aiRosters[week];
+                    Object.keys(r).forEach(pos => {
+                        const p = r[pos];
+                        if (p && p.projected) {
+                            p.projected = calculateCustomFantasyPoints(p.projected, p.pos, currentLeague.scoringRules);
+                        }
+                    });
+                });
+            }
+
+            saveLeaguesStorage();
+            updateCommissionerUI();
+            if (!document.getElementById('tab-content-team').classList.contains('hidden')) renderMyTeam();
+            if (!document.getElementById('tab-content-matchup').classList.contains('hidden')) renderMatchup();
+            closeSettingsModal();
+            showToast("Saved custom scoring rules & updated commissioner settings!");
+        }
+
         async function enterLeague(leagueId) {
             if (!leaguesData[leagueId]) {
                 showToast("League ID Not Found");
@@ -1277,14 +1631,30 @@
             currentLeague = leaguesData[leagueId];
             currentLeague.id = leagueId;
 
+            if (!currentLeague.commissioner) {
+                const members = Object.keys(currentLeague.rosters || {});
+                currentLeague.commissioner = members[0] || currentUser.name;
+                saveLeaguesStorage();
+            }
+
+            if (currentLeague.weeklyTeamPool && currentLeague.weeklyTeamPool.length === 30) {
+                currentWeekTeams = currentLeague.weeklyTeamPool;
+                renderSpinnerTrack();
+            }
+
             if (typeof window.listenToActiveLeague === 'function') {
                 window.listenToActiveLeague(leagueId, (cloudLeague) => {
                     if (cloudLeague && currentLeague && currentLeague.id === leagueId) {
                         currentLeague = cloudLeague;
                         leaguesData[leagueId] = cloudLeague;
                         saveLocalLeaguesStorage();
+                        if (cloudLeague.weeklyTeamPool && cloudLeague.weeklyTeamPool.length === 30) {
+                            currentWeekTeams = cloudLeague.weeklyTeamPool;
+                            renderSpinnerTrack();
+                        }
                         updateFieldUI();
                         updateRespinBadgesUI();
+                        updateCommissionerUI();
                         populateOpponentDropdown();
                         if (!document.getElementById('tab-content-team').classList.contains('hidden')) renderMyTeam();
                         if (!document.getElementById('tab-content-matchup').classList.contains('hidden')) renderMatchup();
@@ -1296,6 +1666,7 @@
             await syncWeeklyAIRoster();
             populateOpponentDropdown();
             updateRespinBadgesUI();
+            updateCommissionerUI();
 
             document.getElementById('league-name-display').innerText = currentLeague.name;
             document.getElementById('league-id-display').innerText = leagueId;
@@ -1415,6 +1786,8 @@
                                         : (assignedPos === 'K' ? 3.0 : 4.5);
                                     let randomizedProj = +(baseProj + (Math.random() * 4.0) - (Math.random() * 2.0)).toFixed(1);
 
+                                    const customProj = calculateCustomFantasyPoints(randomizedProj, assignedPos);
+
                                     players.push({
                                         name: athlete.fullName || athlete.displayName,
                                         pos: assignedPos,
@@ -1423,7 +1796,7 @@
                                         logoUrl: teamObj.logoUrl,
                                         isStarter: isStarter,
                                         isDst: false,
-                                        projected: randomizedProj,
+                                        projected: customProj,
                                         score: 0.0,
                                         injury: athlete.injuries && athlete.injuries.length > 0 ? athlete.injuries[0].status : 'Healthy'
                                     });
@@ -1454,11 +1827,9 @@
             const botRoster = {};
             if (currentWeekTeams.length === 0) return botRoster;
 
-            // Split 30 weekly teams into NFL and College Football pools
             const nflPool = currentWeekTeams.filter(t => t.sport === 'nfl');
             const ncaaPool = currentWeekTeams.filter(t => t.sport === 'college-football');
 
-            // Pick 9 unique random teams for AI (alternating NFL and NCAA for balance)
             const chosenTeams = [];
             for (let i = 0; i < POSITIONS.length; i++) {
                 const isNcaa = (i % 2 === 0);
@@ -1468,7 +1839,6 @@
                 chosenTeams.push(team);
             }
 
-            // Draft real players from each team's live ESPN depth chart
             for (let i = 0; i < POSITIONS.length; i++) {
                 const pos = POSITIONS[i];
                 const team = chosenTeams[i];
@@ -1491,7 +1861,6 @@
                     eligible = roster.filter(p => ['WR', 'RB', 'FB', 'TE'].includes(p.pos));
                 }
 
-                // Prefer starters
                 eligible.sort((a, b) => {
                     if (a.isStarter !== b.isStarter) return a.isStarter ? -1 : 1;
                     return b.projected - a.projected;
@@ -2028,11 +2397,14 @@
         }
 
         function updateLiveScores() {
+            const rules = getLeagueScoringRules();
             const roster = currentLeague.rosters[currentUser.name] || {};
             let total = 0;
             Object.keys(roster).forEach(pos => {
-                let pts = +(10 + Math.random() * 20).toFixed(1);
-                roster[pos].score = pts;
+                const p = roster[pos];
+                const simRatio = (0.75 + Math.random() * 0.6);
+                let pts = +(calculateCustomFantasyPoints(p.projected * simRatio, p.pos, rules)).toFixed(1);
+                p.score = pts;
                 total += pts;
             });
 
@@ -2041,7 +2413,8 @@
                 const aiRoster = currentLeague.aiRosters[aiWeekKey];
                 Object.keys(aiRoster).forEach(pos => {
                     const p = aiRoster[pos];
-                    const pts = +(p.projected * (0.8 + Math.random() * 0.45)).toFixed(1);
+                    const simRatio = (0.75 + Math.random() * 0.6);
+                    const pts = +(calculateCustomFantasyPoints(p.projected * simRatio, p.pos, rules)).toFixed(1);
                     p.score = pts;
                 });
             }
