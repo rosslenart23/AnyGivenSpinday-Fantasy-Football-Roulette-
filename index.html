@@ -241,7 +241,6 @@
             </div>
 
             <div class="flex-1 relative min-h-[450px]">
-                <!-- TAB 1: SPIN DRAFT -->
                 <div id="tab-content-spin" class="absolute inset-0 flex flex-col">
                     <div class="glass-panel rounded-xl p-6 flex flex-col items-center justify-center flex-1 text-center">
                         <div class="flex items-center gap-2 mb-2">
@@ -297,7 +296,6 @@
                     </div>
                 </div>
 
-                <!-- TAB 2: MY TEAM -->
                 <div id="tab-content-team" class="absolute inset-0 flex flex-col hidden overflow-y-auto pb-10">
                     <div class="flex justify-between items-end mb-4">
                         <h3 class="text-2xl font-black">My Roster</h3>
@@ -321,7 +319,6 @@
                     </div>
                 </div>
 
-                <!-- TAB 3: MATCHUP -->
                 <div id="tab-content-matchup" class="absolute inset-0 flex flex-col hidden overflow-y-auto pb-10">
                     <h3 class="text-2xl font-black mb-6">Weekly Matchup</h3>
                     <div class="glass-panel rounded-xl p-6 flex flex-col items-center justify-between gap-6 mb-6">
@@ -353,7 +350,6 @@
                     </div>
                 </div>
 
-                <!-- TAB 4: STANDINGS -->
                 <div id="tab-content-standings" class="absolute inset-0 flex flex-col hidden overflow-y-auto">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-2xl font-black">League Standings</h3>
@@ -462,6 +458,34 @@
                 </div>
             </div>
 
+            <!-- Position Filter Bubbles Strip -->
+            <div class="bg-slate-900/95 border-b border-slate-800 px-4 py-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider mr-1 flex items-center gap-1 shrink-0">
+                    <i class="fas fa-filter text-emerald-400"></i> Filter:
+                </span>
+                <button onclick="setPlayerModalPositionFilter('ALL')" id="filter-btn-ALL" class="pos-filter-pill px-3 py-1 rounded-full text-xs font-black transition-all bg-emerald-500 text-slate-950 shadow-md">
+                    ALL
+                </button>
+                <button onclick="setPlayerModalPositionFilter('QB')" id="filter-btn-QB" class="pos-filter-pill px-3 py-1 rounded-full text-xs font-bold transition-all bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">
+                    QB
+                </button>
+                <button onclick="setPlayerModalPositionFilter('RB')" id="filter-btn-RB" class="pos-filter-pill px-3 py-1 rounded-full text-xs font-bold transition-all bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">
+                    RB
+                </button>
+                <button onclick="setPlayerModalPositionFilter('WR')" id="filter-btn-WR" class="pos-filter-pill px-3 py-1 rounded-full text-xs font-bold transition-all bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">
+                    WR
+                </button>
+                <button onclick="setPlayerModalPositionFilter('TE')" id="filter-btn-TE" class="pos-filter-pill px-3 py-1 rounded-full text-xs font-bold transition-all bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">
+                    TE
+                </button>
+                <button onclick="setPlayerModalPositionFilter('DST')" id="filter-btn-DST" class="pos-filter-pill px-3 py-1 rounded-full text-xs font-bold transition-all bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">
+                    D/ST
+                </button>
+                <button onclick="setPlayerModalPositionFilter('K')" id="filter-btn-K" class="pos-filter-pill px-3 py-1 rounded-full text-xs font-bold transition-all bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700">
+                    K
+                </button>
+            </div>
+
             <div class="p-4 flex-1 overflow-y-auto">
                 <div id="players-loading" class="flex flex-col items-center justify-center py-10 text-slate-400">
                     <div class="loader mb-3"></div>
@@ -491,6 +515,8 @@
         let activeSlateWeek = 8;
         let isMondayNightFootballFinal = false;
         let isCurrentWeekStarted = false;
+        let activeModalPositionFilter = 'ALL';
+        let cachedModalRawPlayers = [];
 
         const POSITIONS = ['QB', 'RB1', 'RB2', 'WR1', 'WR2', 'TE', 'FLEX', 'DST', 'K'];
 
@@ -1117,7 +1143,7 @@
 
                 const exactLogo = getTeamLogoUrl(selected.team);
 
-                // Initial score begins at 0.0 before kickoff
+                // Initial score begins strictly at 0.0 before kickoff
                 botRoster[pos] = {
                     name: selected.name,
                     pos: selected.pos,
@@ -1321,6 +1347,20 @@
             sportTag.innerText = currentSpinTeam.sport === 'nfl' ? 'NFL' : 'NCAA';
             subtitleEl.innerText = `${targetSlot ? 'Target Slot: ' + targetSlot + ' • ' : ''}Live ESPN Depth Chart`;
             
+            // Set initial position filter based on slot clicked, or default to ALL
+            if (targetSlot) {
+                if (targetSlot === 'WR1' || targetSlot === 'WR2') activeModalPositionFilter = 'WR';
+                else if (targetSlot === 'RB1' || targetSlot === 'RB2') activeModalPositionFilter = 'RB';
+                else if (targetSlot === 'QB') activeModalPositionFilter = 'QB';
+                else if (targetSlot === 'TE') activeModalPositionFilter = 'TE';
+                else if (targetSlot === 'DST') activeModalPositionFilter = 'DST';
+                else if (targetSlot === 'K') activeModalPositionFilter = 'K';
+                else activeModalPositionFilter = 'ALL';
+            } else {
+                activeModalPositionFilter = 'ALL';
+            }
+            updateFilterPillsUI();
+
             modal.classList.remove('hidden');
             listEl.innerHTML = '';
             loader.classList.remove('hidden');
@@ -1404,25 +1444,66 @@
                 );
             }
 
-            let filteredPlayers = players;
-            if (currentActiveSlot) {
-                if (currentActiveSlot === 'WR1' || currentActiveSlot === 'WR2') {
-                    filteredPlayers = players.filter(p => p.pos === 'WR');
-                } else if (currentActiveSlot === 'RB1' || currentActiveSlot === 'RB2') {
-                    filteredPlayers = players.filter(p => p.pos === 'RB' || p.pos === 'FB');
-                } else if (currentActiveSlot === 'QB') {
-                    filteredPlayers = players.filter(p => p.pos === 'QB');
-                } else if (currentActiveSlot === 'TE') {
-                    filteredPlayers = players.filter(p => p.pos === 'TE');
-                } else if (currentActiveSlot === 'DST') {
-                    filteredPlayers = players.filter(p => p.pos === 'DST' || p.isDst);
-                } else if (currentActiveSlot === 'K') {
-                    filteredPlayers = players.filter(p => p.pos === 'K');
-                } else if (currentActiveSlot === 'FLEX') {
-                    filteredPlayers = players.filter(p => ['WR', 'RB', 'FB', 'TE'].includes(p.pos));
+            cachedModalRawPlayers = players;
+            loader.classList.add('hidden');
+            renderFilteredModalPlayers();
+        }
+
+        function setPlayerModalPositionFilter(pos) {
+            activeModalPositionFilter = pos;
+            updateFilterPillsUI();
+            renderFilteredModalPlayers();
+        }
+
+        function updateFilterPillsUI() {
+            const filterTypes = ['ALL', 'QB', 'RB', 'WR', 'TE', 'DST', 'K'];
+            filterTypes.forEach(type => {
+                const btn = document.getElementById(`filter-btn-${type}`);
+                if (!btn) return;
+                if (type === activeModalPositionFilter) {
+                    btn.className = 'pos-filter-pill px-3 py-1 rounded-full text-xs font-black transition-all bg-emerald-500 text-slate-950 shadow-md';
+                } else {
+                    btn.className = 'pos-filter-pill px-3 py-1 rounded-full text-xs font-bold transition-all bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700';
                 }
-            } else {
-                filteredPlayers = players.filter(p => ['QB', 'RB', 'FB', 'WR', 'TE', 'K', 'DST'].includes(p.pos));
+            });
+        }
+
+        function renderFilteredModalPlayers() {
+            const listEl = document.getElementById('players-list');
+            if (!listEl) return;
+
+            let filteredPlayers = [...cachedModalRawPlayers];
+
+            if (activeModalPositionFilter !== 'ALL') {
+                if (activeModalPositionFilter === 'WR') {
+                    filteredPlayers = filteredPlayers.filter(p => p.pos === 'WR');
+                } else if (activeModalPositionFilter === 'RB') {
+                    filteredPlayers = filteredPlayers.filter(p => p.pos === 'RB' || p.pos === 'FB');
+                } else if (activeModalPositionFilter === 'QB') {
+                    filteredPlayers = filteredPlayers.filter(p => p.pos === 'QB');
+                } else if (activeModalPositionFilter === 'TE') {
+                    filteredPlayers = filteredPlayers.filter(p => p.pos === 'TE');
+                } else if (activeModalPositionFilter === 'DST') {
+                    filteredPlayers = filteredPlayers.filter(p => p.pos === 'DST' || p.isDst);
+                } else if (activeModalPositionFilter === 'K') {
+                    filteredPlayers = filteredPlayers.filter(p => p.pos === 'K');
+                }
+            } else if (currentActiveSlot) {
+                if (currentActiveSlot === 'WR1' || currentActiveSlot === 'WR2') {
+                    filteredPlayers = filteredPlayers.filter(p => p.pos === 'WR');
+                } else if (currentActiveSlot === 'RB1' || currentActiveSlot === 'RB2') {
+                    filteredPlayers = filteredPlayers.filter(p => p.pos === 'RB' || p.pos === 'FB');
+                } else if (currentActiveSlot === 'QB') {
+                    filteredPlayers = filteredPlayers.filter(p => p.pos === 'QB');
+                } else if (currentActiveSlot === 'TE') {
+                    filteredPlayers = filteredPlayers.filter(p => p.pos === 'TE');
+                } else if (currentActiveSlot === 'DST') {
+                    filteredPlayers = filteredPlayers.filter(p => p.pos === 'DST' || p.isDst);
+                } else if (currentActiveSlot === 'K') {
+                    filteredPlayers = filteredPlayers.filter(p => p.pos === 'K');
+                } else if (currentActiveSlot === 'FLEX') {
+                    filteredPlayers = filteredPlayers.filter(p => ['WR', 'RB', 'FB', 'TE'].includes(p.pos));
+                }
             }
 
             filteredPlayers.sort((a, b) => {
@@ -1432,15 +1513,15 @@
                 return b.projected - a.projected;
             });
 
-            loader.classList.add('hidden');
-            let html = '';
+            const userRoster = (currentLeague && currentLeague.rosters[currentUser.name]) || {};
             const draftedNames = Object.values(userRoster).map(p => p.name);
 
             if (filteredPlayers.length === 0) {
-                listEl.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm">No available players found for this slot on ${currentSpinTeam.name}. Try re-spinning!</div>`;
+                listEl.innerHTML = `<div class="text-center py-10 text-slate-400 text-sm">No available ${activeModalPositionFilter === 'ALL' ? '' : activeModalPositionFilter + ' '}players found on ${currentSpinTeam.name}. Try picking another filter!</div>`;
                 return;
             }
 
+            let html = '';
             filteredPlayers.forEach(p => {
                 const alreadyOnRoster = draftedNames.includes(p.name);
                 const isDst = p.isDst || p.pos === 'DST';
@@ -1494,6 +1575,7 @@
         function closePlayerModal() {
             document.getElementById('player-modal').classList.add('hidden');
             currentActiveSlot = null;
+            activeModalPositionFilter = 'ALL';
         }
 
         function selectPlayer(name, pos, projected) {
