@@ -1,4 +1,3 @@
-<!-- STREAMING_CHUNK:Configuring head styles, responsive layouts, and UI themes... -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -652,7 +651,6 @@
         <span id="toast-message">Notification</span>
     </div>
 
-    <!-- STREAMING_CHUNK:Initializing real-time cloud database and sync listeners... -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -749,7 +747,6 @@
         window.dispatchEvent(new CustomEvent('cloud-ready'));
     </script>
 
-    <!-- STREAMING_CHUNK:Configuring client-side gameplay, roster draft state, and scoring rules... -->
     <script>
         let currentUser = { name: "Manager" };
         let currentLeague = null;
@@ -818,67 +815,153 @@
 
         let poolNflEligible = [];
         let poolNcaafEligible = [];
+        let masterAllNflTeams = [];
+        let masterAllNcaafTeams = [];
 
         const TEAM_ROSTER_CACHE = {};
 
         const POSITIONS = ['QB', 'RB1', 'RB2', 'WR1', 'WR2', 'TE', 'FLEX', 'DST', 'K'];
 
-        function getManagerRespins() {
-            if (!currentLeague) return 3;
-            if (!currentLeague.respins) currentLeague.respins = {};
-            const weekKey = `week_${activeSlateWeek}`;
-            if (!currentLeague.respins[weekKey]) currentLeague.respins[weekKey] = {};
-            if (typeof currentLeague.respins[weekKey][currentUser.name] === 'undefined') {
-                currentLeague.respins[weekKey][currentUser.name] = 3;
-            }
-            return currentLeague.respins[weekKey][currentUser.name];
-        }
-
-        function setManagerRespins(count) {
-            if (!currentLeague) return;
-            if (!currentLeague.respins) currentLeague.respins = {};
-            const weekKey = `week_${activeSlateWeek}`;
-            if (!currentLeague.respins[weekKey]) currentLeague.respins[weekKey] = {};
-            currentLeague.respins[weekKey][currentUser.name] = Math.max(0, count);
-            saveLeaguesStorage();
-            updateRespinBadgesUI();
-        }
-
-        function updateRespinBadgesUI() {
-            const count = getManagerRespins();
-            const badgeTeam = document.getElementById('respin-count');
-            const badgeSpin = document.getElementById('spin-respin-count');
-            if (badgeTeam) badgeTeam.innerText = count;
-            if (badgeSpin) badgeSpin.innerText = count;
-            updateSpinButtonLockState();
-        }
-
-        function updateSpinButtonLockState() {
-            const btn = document.getElementById('spin-btn');
-            const subtext = document.getElementById('spin-subtext');
-            if (!btn || !currentLeague) return;
-
-            const roster = (currentLeague.rosters && currentLeague.rosters[currentUser.name]) || {};
-            const filledCount = Object.keys(roster).length;
-            const respinsLeft = getManagerRespins();
-
-            if (filledCount >= 9) {
-                btn.disabled = true;
-                btn.className = "w-full bg-slate-800 text-slate-400 font-black py-4 px-6 rounded-lg text-lg border border-slate-700 cursor-not-allowed shadow-none";
-                if (respinsLeft > 0) {
-                    btn.innerHTML = `<i class="fas fa-lock mr-2 text-amber-400"></i> ROSTER LOCKED (9/9)`;
-                    if (subtext) subtext.innerHTML = `<span class="text-amber-400 font-bold">Roster Full!</span> Clear a player via Re-spin in 'My Team' to spin again (${respinsLeft} left).`;
-                } else {
-                    btn.innerHTML = `<i class="fas fa-ban mr-2 text-rose-500"></i> NO RE-SPINS REMAINING`;
-                    if (subtext) subtext.innerHTML = `<span class="text-rose-400 font-bold">Roster Locked for the Week. All 3 re-spins used.</span>`;
-                }
-            } else {
-                btn.disabled = false;
-                btn.className = "w-full bg-gradient-to-b from-emerald-400 to-emerald-600 hover:from-emerald-300 hover:to-emerald-500 text-slate-900 font-black py-4 px-6 rounded-lg text-xl shadow-[0_4px_0_rgb(4,120,87)] active:shadow-[0_0px_0_rgb(4,120,87)] active:translate-y-1 transition-all";
-                btn.innerHTML = `SPIN <i class="fas fa-dharmachakra ml-2"></i>`;
-                if (subtext) subtext.innerHTML = `<i class="fas fa-redo-alt text-emerald-400 text-[10px]"></i> Re-spins Remaining: <span id="spin-respin-count" class="text-emerald-400 font-black">${respinsLeft}</span> / 3`;
-            }
-        }
+        const FBS_138_MASTER = [
+            { name: "Air Force Falcons", id: "2005" },
+            { name: "Akron Zips", id: "2006" },
+            { name: "Alabama Crimson Tide", id: "333" },
+            { name: "Appalachian State Mountaineers", id: "2026" },
+            { name: "Arizona Wildcats", id: "12" },
+            { name: "Arizona State Sun Devils", id: "9" },
+            { name: "Arkansas Razorbacks", id: "8" },
+            { name: "Arkansas State Red Wolves", id: "2032" },
+            { name: "Army Black Knights", id: "349" },
+            { name: "Auburn Tigers", id: "2" },
+            { name: "Ball State Cardinals", id: "2050" },
+            { name: "Baylor Bears", id: "239" },
+            { name: "Boise State Broncos", id: "68" },
+            { name: "Boston College Eagles", id: "103" },
+            { name: "Bowling Green Falcons", id: "189" },
+            { name: "Buffalo Bulls", id: "2084" },
+            { name: "BYU Cougars", id: "252" },
+            { name: "California Golden Bears", id: "25" },
+            { name: "Central Michigan Chippewas", id: "2117" },
+            { name: "Charlotte 49ers", id: "2429" },
+            { name: "Cincinnati Bearcats", id: "2132" },
+            { name: "Clemson Tigers", id: "228" },
+            { name: "Coastal Carolina Chanticleers", id: "324" },
+            { name: "Colorado Buffaloes", id: "38" },
+            { name: "Colorado State Rams", id: "36" },
+            { name: "Delaware Fightin' Blue Hens", id: "48" },
+            { name: "Duke Blue Devils", id: "150" },
+            { name: "East Carolina Pirates", id: "151" },
+            { name: "Eastern Michigan Eagles", id: "2199" },
+            { name: "FIU Panthers", id: "2229" },
+            { name: "Florida Gators", id: "57" },
+            { name: "Florida Atlantic Owls", id: "2226" },
+            { name: "Florida State Seminoles", id: "52" },
+            { name: "Fresno State Bulldogs", id: "278" },
+            { name: "Georgia Bulldogs", id: "61" },
+            { name: "Georgia Southern Eagles", id: "290" },
+            { name: "Georgia State Panthers", id: "2247" },
+            { name: "Georgia Tech Yellow Jackets", id: "59" },
+            { name: "Hawaii Rainbow Warriors", id: "62" },
+            { name: "Houston Cougars", id: "248" },
+            { name: "Illinois Fighting Illini", id: "356" },
+            { name: "Indiana Hoosiers", id: "84" },
+            { name: "Iowa Hawkeyes", id: "2294" },
+            { name: "Iowa State Cyclones", id: "66" },
+            { name: "Jacksonville State Gamecocks", id: "55" },
+            { name: "James Madison Dukes", id: "256" },
+            { name: "Kansas Jayhawks", id: "2305" },
+            { name: "Kansas State Wildcats", id: "2306" },
+            { name: "Kennesaw State Owls", id: "338" },
+            { name: "Kent State Golden Flashes", id: "2309" },
+            { name: "Kentucky Wildcats", id: "96" },
+            { name: "Liberty Flames", id: "2335" },
+            { name: "Louisiana Ragin' Cajuns", id: "309" },
+            { name: "Louisiana Tech Bulldogs", id: "2348" },
+            { name: "Louisiana-Monroe Warhawks", id: "2433" },
+            { name: "Louisville Cardinals", id: "97" },
+            { name: "LSU Tigers", id: "99" },
+            { name: "Marshall Thundering Herd", id: "276" },
+            { name: "Maryland Terrapins", id: "120" },
+            { name: "Memphis Tigers", id: "235" },
+            { name: "Miami Hurricanes", id: "2390" },
+            { name: "Miami (OH) RedHawks", id: "193" },
+            { name: "Michigan Wolverines", id: "130" },
+            { name: "Michigan State Spartans", id: "127" },
+            { name: "Middle Tennessee Blue Raiders", id: "2393" },
+            { name: "Minnesota Golden Gophers", id: "135" },
+            { name: "Mississippi State Bulldogs", id: "344" },
+            { name: "Missouri Tigers", id: "142" },
+            { name: "Missouri State Bears", id: "2623" },
+            { name: "Navy Midshipmen", id: "2426" },
+            { name: "NC State Wolfpack", id: "152" },
+            { name: "Nebraska Cornhuskers", id: "158" },
+            { name: "Nevada Wolf Pack", id: "2440" },
+            { name: "New Mexico Lobos", id: "167" },
+            { name: "New Mexico State Aggies", id: "166" },
+            { name: "North Carolina Tar Heels", id: "153" },
+            { name: "North Dakota State Bison", id: "2449" },
+            { name: "North Texas Mean Green", id: "249" },
+            { name: "Northern Illinois Huskies", id: "2459" },
+            { name: "Northwestern Wildcats", id: "77" },
+            { name: "Notre Dame Fighting Irish", id: "87" },
+            { name: "Ohio Bobcats", id: "195" },
+            { name: "Ohio State Buckeyes", id: "194" },
+            { name: "Oklahoma Sooners", id: "201" },
+            { name: "Oklahoma State Cowboys", id: "197" },
+            { name: "Old Dominion Monarchs", id: "295" },
+            { name: "Ole Miss Rebels", id: "145" },
+            { name: "Oregon Ducks", id: "2483" },
+            { name: "Oregon State Beavers", id: "204" },
+            { name: "Penn State Nittany Lions", id: "213" },
+            { name: "Pittsburgh Panthers", id: "221" },
+            { name: "Purdue Boilermakers", id: "2509" },
+            { name: "Rice Owls", id: "242" },
+            { name: "Rutgers Scarlet Knights", id: "164" },
+            { name: "Sacramento State Hornets", id: "16" },
+            { name: "Sam Houston Bearkats", id: "2534" },
+            { name: "San Diego State Aztecs", id: "21" },
+            { name: "San Jose State Spartans", id: "23" },
+            { name: "SMU Mustangs", id: "2567" },
+            { name: "South Alabama Jaguars", id: "6" },
+            { name: "South Carolina Gamecocks", id: "2579" },
+            { name: "Southern Miss Golden Eagles", id: "2572" },
+            { name: "Stanford Cardinal", id: "24" },
+            { name: "Syracuse Orange", id: "183" },
+            { name: "TCU Horned Frogs", id: "2628" },
+            { name: "Temple Owls", id: "218" },
+            { name: "Tennessee Volunteers", id: "2633" },
+            { name: "Texas Longhorns", id: "251" },
+            { name: "Texas A&M Aggies", id: "245" },
+            { name: "Texas State Bobcats", id: "326" },
+            { name: "Texas Tech Red Raiders", id: "2641" },
+            { name: "Toledo Rockets", id: "2649" },
+            { name: "Troy Trojans", id: "2653" },
+            { name: "Tulane Green Wave", id: "2655" },
+            { name: "Tulsa Golden Hurricane", id: "202" },
+            { name: "UAB Blazers", id: "5" },
+            { name: "UCF Knights", id: "2116" },
+            { name: "UCLA Bruins", id: "26" },
+            { name: "UConn Huskies", id: "41" },
+            { name: "UMass Minutemen", id: "113" },
+            { name: "UNLV Rebels", id: "2439" },
+            { name: "USC Trojans", id: "30" },
+            { name: "South Florida Bulls", id: "58" },
+            { name: "Utah Utes", id: "254" },
+            { name: "Utah State Aggies", id: "328" },
+            { name: "UTEP Miners", id: "2638" },
+            { name: "UTSA Roadrunners", id: "2636" },
+            { name: "Vanderbilt Commodores", id: "238" },
+            { name: "Virginia Cavaliers", id: "258" },
+            { name: "Virginia Tech Hokies", id: "259" },
+            { name: "Wake Forest Demon Deacons", id: "154" },
+            { name: "Washington Huskies", id: "264" },
+            { name: "Washington State Cougars", id: "265" },
+            { name: "West Virginia Mountaineers", id: "277" },
+            { name: "Western Kentucky Hilltoppers", id: "98" },
+            { name: "Western Michigan Broncos", id: "2711" },
+            { name: "Wisconsin Badgers", id: "275" },
+            { name: "Wyoming Cowboys", id: "2751" }
+        ];
 
         const TEAM_REGISTRY = {
             // NFL Teams
@@ -913,32 +996,17 @@
             "Seattle Seahawks": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/sea.png", sport: "nfl", id: "26" },
             "Tampa Bay Buccaneers": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/tb.png", sport: "nfl", id: "27" },
             "Tennessee Titans": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ten.png", sport: "nfl", id: "10" },
-            "Washington Commanders": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png", sport: "nfl", id: "28" },
-
-            // NCAA College Football Teams
-            "Alabama Crimson Tide": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png", sport: "college-football", id: "333" },
-            "Texas A&M Aggies": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/245.png", sport: "college-football", id: "245" },
-            "Tennessee Volunteers": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png", sport: "college-football", id: "2633" },
-            "South Carolina Gamecocks": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2579.png", sport: "college-football", id: "2579" },
-            "Texas Longhorns": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png", sport: "college-football", id: "251" },
-            "Ole Miss Rebels": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/145.png", sport: "college-football", id: "145" },
-            "Appalachian State": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2026.png", sport: "college-football", id: "2026" },
-            "James Madison Dukes": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/256.png", sport: "college-football", id: "256" },
-            "Memphis Tigers": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/235.png", sport: "college-football", id: "235" },
-            "East Carolina Pirates": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/151.png", sport: "college-football", id: "151" },
-            "Duke Blue Devils": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/150.png", sport: "college-football", id: "150" },
-            "Virginia Cavaliers": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/258.png", sport: "college-football", id: "258" },
-            "NC State Wolfpack": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/152.png", sport: "college-football", id: "152" },
-            "Stanford Cardinal": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/24.png", sport: "college-football", id: "24" },
-            "Georgia Bulldogs": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png", sport: "college-football", id: "61" },
-            "Ohio State Buckeyes": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png", sport: "college-football", id: "194" },
-            "Oregon Ducks": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png", sport: "college-football", id: "2483" },
-            "Penn State Nittany Lions": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/213.png", sport: "college-football", id: "213" },
-            "Michigan Wolverines": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/130.png", sport: "college-football", id: "130" },
-            "LSU Tigers": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/99.png", sport: "college-football", id: "99" },
-            "Notre Dame Fighting Irish": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/87.png", sport: "college-football", id: "87" },
-            "USC Trojans": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/30.png", sport: "college-football", id: "30" }
+            "Washington Commanders": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png", sport: "nfl", id: "28" }
         };
+
+        // Populate registry with all 138 FBS teams
+        FBS_138_MASTER.forEach(t => {
+            TEAM_REGISTRY[t.name] = {
+                logoUrl: `https://a.espncdn.com/i/teamlogos/ncaa/500/${t.id}.png`,
+                sport: "college-football",
+                id: t.id
+            };
+        });
 
         function getTeamLogoUrl(teamName, fallbackLogo) {
             if (!teamName) return fallbackLogo || "https://a.espncdn.com/i/teamlogos/nfl/500/nfl.png";
@@ -1006,7 +1074,6 @@
             }
         }
 
-        /* STREAMING_CHUNK:Fetching live NFL and NCAA schedules with accurate pre-game status checks... */
         async function fetchTeamsFromESPNEndpoints() {
             try {
                 let allNflTeams = [];
@@ -1074,7 +1141,7 @@
                     fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${seasonYear}&seasontype=${seasonType}&week=${targetWeek}`),
                     fetch(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=80&week=${cfbTargetWeek}&year=${seasonYear}`),
                     fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams'),
-                    fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=700')
+                    fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?groups=80&limit=200')
                 ]);
 
                 let targetNflEvents = [];
@@ -1091,7 +1158,7 @@
                     targetNcaafEvents = data.events || [];
                 }
 
-                // Check ONLY target week events to determine if current week has actually kicked off
+                // Strictly evaluate status against TARGET week's events
                 const targetInProgress = targetNflEvents.filter(ev => ev.status?.type?.state === 'in').length;
                 const targetFinished = targetNflEvents.filter(ev => ev.status?.type?.state === 'post').length;
                 isCurrentWeekStarted = (targetInProgress > 0 || targetFinished > 0);
@@ -1172,23 +1239,52 @@
                     });
                 }
 
+                // Ensure all 138 FBS programs exist in the master pool even if on a bye week
+                FBS_138_MASTER.forEach(fbs => {
+                    if (!allNcaafTeams.some(t => t.id === fbs.id || t.name === fbs.name)) {
+                        let matchup = "vs. Bye Week";
+                        let datetime = "Sat, Oct 24 • 3:30 PM EDT";
+                        const matchedEvent = targetNcaafEvents.find(ev => ev.competitions && ev.competitions[0].competitors.some(c => c.team.id === fbs.id || c.team.displayName === fbs.name));
+                        if (matchedEvent) {
+                            const comp = matchedEvent.competitions[0];
+                            datetime = formatGameDateTime(comp.date);
+                            const selfComp = comp.competitors.find(c => c.team.id === fbs.id || c.team.displayName === fbs.name);
+                            const oppComp = comp.competitors.find(c => (c.team.id !== fbs.id) && (c.team.displayName !== fbs.name));
+                            if (oppComp) {
+                                const homeAway = selfComp.homeAway === 'home' ? 'vs.' : '@';
+                                matchup = `${homeAway} ${oppComp.team.displayName}`;
+                            }
+                        }
+                        allNcaafTeams.push({
+                            name: fbs.name,
+                            id: fbs.id,
+                            sport: "college-football",
+                            logoUrl: `https://a.espncdn.com/i/teamlogos/ncaa/500/${fbs.id}.png`,
+                            matchup: matchup,
+                            datetime: datetime
+                        });
+                    }
+                });
+
                 const nflPlayingThisWeek = allNflTeams.filter(t => t.sport === 'nfl' && !t.matchup.includes("Bye Week"));
                 const ncaafPlayingThisWeek = allNcaafTeams.filter(t => t.sport === 'college-football' && !t.matchup.includes("Bye Week"));
 
-                poolNflEligible = nflPlayingThisWeek;
-                poolNcaafEligible = ncaafPlayingThisWeek;
+                poolNflEligible = nflPlayingThisWeek.length >= 15 ? nflPlayingThisWeek : allNflTeams;
+                poolNcaafEligible = ncaafPlayingThisWeek.length >= 15 ? ncaafPlayingThisWeek : allNcaafTeams;
+                masterAllNflTeams = allNflTeams;
+                masterAllNcaafTeams = allNcaafTeams;
 
-                if (nflPlayingThisWeek.length >= 15 && ncaafPlayingThisWeek.length >= 15) {
-                    const random15NFL = shuffleArray(nflPlayingThisWeek).slice(0, 15);
-                    const random15NCAA = shuffleArray(ncaafPlayingThisWeek).slice(0, 15);
+                if (poolNflEligible.length >= 15 && poolNcaafEligible.length >= 15) {
+                    const random15NFL = shuffleArray(poolNflEligible).slice(0, 15);
+                    const random15NCAA = shuffleArray(poolNcaafEligible).slice(0, 15);
                     currentWeekTeams = shuffleArray([...random15NFL, ...random15NCAA]);
                 } else {
-                    throw new Error("Pool smaller than 15 each, using 30-team verified fallback");
+                    throw new Error("Pool smaller than 15 each, using verified fallback");
                 }
                 renderSpinnerTrack();
                 updateCommissionerUI();
             } catch (err) {
-                const verified2026NFL = [
+                const verified32NFL = [
                     { name: "Chicago Bears", id: "3", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png", matchup: "vs. New England Patriots", datetime: "Thu, Oct 22 • 8:15 PM EDT" },
                     { name: "New England Patriots", id: "17", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ne.png", matchup: "@ Chicago Bears", datetime: "Thu, Oct 22 • 8:15 PM EDT" },
                     { name: "New Orleans Saints", id: "18", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/no.png", matchup: "vs. Pittsburgh Steelers", datetime: "Sun, Oct 25 • 9:30 AM EDT" },
@@ -1203,35 +1299,41 @@
                     { name: "Kansas City Chiefs", id: "12", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png", matchup: "@ Seattle Seahawks", datetime: "Sun, Oct 25 • 8:20 PM EDT" },
                     { name: "Philadelphia Eagles", id: "21", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png", matchup: "vs. Dallas Cowboys", datetime: "Mon, Oct 26 • 8:15 PM EDT" },
                     { name: "Dallas Cowboys", id: "6", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/dal.png", matchup: "@ Philadelphia Eagles", datetime: "Mon, Oct 26 • 8:15 PM EDT" },
-                    { name: "Baltimore Ravens", id: "33", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/bal.png", matchup: "vs. Cleveland Browns", datetime: "Sun, Oct 25 • 1:00 PM EDT" }
+                    { name: "Baltimore Ravens", id: "33", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/bal.png", matchup: "vs. Cleveland Browns", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Cleveland Browns", id: "5", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/cle.png", matchup: "@ Baltimore Ravens", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Buffalo Bills", id: "2", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png", matchup: "vs. Houston Texans", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Houston Texans", id: "34", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/hou.png", matchup: "@ Buffalo Bills", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "San Francisco 49ers", id: "25", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png", matchup: "vs. Los Angeles Rams", datetime: "Sun, Oct 25 • 4:05 PM EDT" },
+                    { name: "Los Angeles Rams", id: "14", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/lar.png", matchup: "@ San Francisco 49ers", datetime: "Sun, Oct 25 • 4:05 PM EDT" },
+                    { name: "Cincinnati Bengals", id: "4", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/cin.png", matchup: "vs. Indianapolis Colts", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Indianapolis Colts", id: "11", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ind.png", matchup: "@ Cincinnati Bengals", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Minnesota Vikings", id: "16", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/min.png", matchup: "vs. Arizona Cardinals", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Arizona Cardinals", id: "22", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png", matchup: "@ Minnesota Vikings", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Atlanta Falcons", id: "1", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/atl.png", matchup: "vs. Washington Commanders", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Washington Commanders", id: "28", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png", matchup: "@ Atlanta Falcons", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Denver Broncos", id: "7", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/den.png", matchup: "vs. Las Vegas Raiders", datetime: "Sun, Oct 25 • 4:25 PM EDT" },
+                    { name: "Las Vegas Raiders", id: "13", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/lv.png", matchup: "@ Denver Broncos", datetime: "Sun, Oct 25 • 4:25 PM EDT" },
+                    { name: "Los Angeles Chargers", id: "24", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/lac.png", matchup: "vs. Tennessee Titans", datetime: "Sun, Oct 25 • 4:05 PM EDT" },
+                    { name: "Tennessee Titans", id: "10", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ten.png", matchup: "@ Los Angeles Chargers", datetime: "Sun, Oct 25 • 4:05 PM EDT" },
+                    { name: "Jacksonville Jaguars", id: "30", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/jax.png", matchup: "vs. New York Giants", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "New York Giants", id: "19", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png", matchup: "@ Jacksonville Jaguars", datetime: "Sun, Oct 25 • 1:00 PM EDT" }
                 ];
 
-                const verified2026NCAA = [
-                    { name: "Alabama Crimson Tide", id: "333", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png", matchup: "vs. Texas A&M Aggies", datetime: "Sat, Oct 24 • 3:30 PM EDT" },
-                    { name: "Texas A&M Aggies", id: "245", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/245.png", matchup: "@ Alabama Crimson Tide", datetime: "Sat, Oct 24 • 3:30 PM EDT" },
-                    { name: "Tennessee Volunteers", id: "2633", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png", matchup: "@ South Carolina Gamecocks", datetime: "Sat, Oct 24 • 3:30 PM EDT" },
-                    { name: "South Carolina Gamecocks", id: "2579", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2579.png", matchup: "vs. Tennessee Volunteers", datetime: "Sat, Oct 24 • 3:30 PM EDT" },
-                    { name: "Texas Longhorns", id: "251", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png", matchup: "vs. Ole Miss Rebels", datetime: "Sat, Oct 24 • 7:30 PM EDT" },
-                    { name: "Ole Miss Rebels", id: "145", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/145.png", matchup: "@ Texas Longhorns", datetime: "Sat, Oct 24 • 7:30 PM EDT" },
-                    { name: "Appalachian State", id: "2026", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2026.png", matchup: "vs. James Madison Dukes", datetime: "Thu, Oct 22 • 7:00 PM EDT" },
-                    { name: "James Madison Dukes", id: "256", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/256.png", matchup: "@ Appalachian State", datetime: "Thu, Oct 22 • 7:00 PM EDT" },
-                    { name: "Memphis Tigers", id: "235", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/235.png", matchup: "vs. East Carolina Pirates", datetime: "Thu, Oct 22 • 7:30 PM EDT" },
-                    { name: "East Carolina Pirates", id: "151", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/151.png", matchup: "@ Memphis Tigers", datetime: "Thu, Oct 22 • 7:30 PM EDT" },
-                    { name: "Duke Blue Devils", id: "150", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/150.png", matchup: "@ Virginia Cavaliers", datetime: "Fri, Oct 23 • 7:00 PM EDT" },
-                    { name: "Virginia Cavaliers", id: "258", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/258.png", matchup: "vs. Duke Blue Devils", datetime: "Fri, Oct 23 • 7:00 PM EDT" },
-                    { name: "NC State Wolfpack", id: "152", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/152.png", matchup: "@ Stanford Cardinal", datetime: "Fri, Oct 23 • 10:30 PM EDT" },
-                    { name: "Stanford Cardinal", id: "24", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/24.png", matchup: "vs. NC State Wolfpack", datetime: "Fri, Oct 23 • 10:30 PM EDT" },
-                    { name: "Georgia Bulldogs", id: "61", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png", matchup: "vs. Kentucky Wildcats", datetime: "Sat, Oct 24 • 7:30 PM EDT" }
-                ];
+                const all138NCAAFallback = FBS_138_MASTER.map((item, idx) => ({
+                    name: item.name,
+                    id: item.id,
+                    sport: "college-football",
+                    logoUrl: `https://a.espncdn.com/i/teamlogos/ncaa/500/${item.id}.png`,
+                    matchup: idx % 2 === 0 ? `vs. ${FBS_138_MASTER[(idx + 1) % FBS_138_MASTER.length].name}` : `@ ${FBS_138_MASTER[idx - 1].name}`,
+                    datetime: idx % 3 === 0 ? "Thu, Oct 22 • 7:30 PM EDT" : (idx % 2 === 0 ? "Fri, Oct 23 • 8:00 PM EDT" : "Sat, Oct 24 • 3:30 PM EDT")
+                }));
 
-                [...verified2026NFL, ...verified2026NCAA].forEach(t => {
-                    TEAM_REGISTRY[t.name] = { logoUrl: t.logoUrl, sport: t.sport, id: t.id };
-                });
+                poolNflEligible = verified32NFL;
+                poolNcaafEligible = all138NCAAFallback;
+                masterAllNflTeams = verified32NFL;
+                masterAllNcaafTeams = all138NCAAFallback;
 
-                poolNflEligible = verified2026NFL;
-                poolNcaafEligible = verified2026NCAA;
-
-                currentWeekTeams = shuffleArray([...verified2026NFL, ...verified2026NCAA]);
+                currentWeekTeams = shuffleArray([...shuffleArray(verified32NFL).slice(0, 15), ...shuffleArray(all138NCAAFallback).slice(0, 15)]);
                 renderSpinnerTrack();
                 updateCommissionerUI();
             }
@@ -1454,7 +1556,6 @@
             return (currentLeague.commissioner === currentUser.name);
         }
 
-        /* STREAMING_CHUNK:Updating commissioner UI controls and checking pre-game re-roll authorization... */
         function updateCommissionerUI() {
             if (!currentLeague) return;
 
@@ -1502,22 +1603,37 @@
                 return;
             }
 
-            if (poolNflEligible.length >= 15 && poolNcaafEligible.length >= 15) {
-                const random15NFL = shuffleArray(poolNflEligible).slice(0, 15);
-                const random15NCAA = shuffleArray(poolNcaafEligible).slice(0, 15);
-                currentWeekTeams = shuffleArray([...random15NFL, ...random15NCAA]);
-            } else if (currentWeekTeams && currentWeekTeams.length >= 30) {
-                const nfl = currentWeekTeams.filter(t => t.sport === 'nfl');
-                const ncaa = currentWeekTeams.filter(t => t.sport === 'college-football');
-                currentWeekTeams = shuffleArray([...shuffleArray(nfl).slice(0, 15), ...shuffleArray(ncaa).slice(0, 15)]);
-            } else {
-                currentWeekTeams = shuffleArray([...currentWeekTeams]);
+            let nflCandidates = (poolNflEligible.length >= 16) ? poolNflEligible : masterAllNflTeams;
+            let ncaafCandidates = (poolNcaafEligible.length >= 20) ? poolNcaafEligible : masterAllNcaafTeams;
+
+            if (nflCandidates.length < 15) nflCandidates = masterAllNflTeams;
+            if (ncaafCandidates.length < 15) ncaafCandidates = masterAllNcaafTeams;
+
+            const currentTeamNames = (currentWeekTeams || []).map(t => t.name);
+
+            const unusedNFL = nflCandidates.filter(t => !currentTeamNames.includes(t.name));
+            const unusedNCAA = ncaafCandidates.filter(t => !currentTeamNames.includes(t.name));
+
+            const pickedNFL = shuffleArray(unusedNFL).slice(0, 15);
+            if (pickedNFL.length < 15) {
+                const remainingNeeded = 15 - pickedNFL.length;
+                const poolOthers = shuffleArray(nflCandidates.filter(t => !pickedNFL.some(p => p.name === t.name)));
+                pickedNFL.push(...poolOthers.slice(0, remainingNeeded));
             }
+
+            const pickedNCAA = shuffleArray(unusedNCAA).slice(0, 15);
+            if (pickedNCAA.length < 15) {
+                const remainingNeeded = 15 - pickedNCAA.length;
+                const poolOthers = shuffleArray(ncaafCandidates.filter(t => !pickedNCAA.some(p => p.name === t.name)));
+                pickedNCAA.push(...poolOthers.slice(0, remainingNeeded));
+            }
+
+            currentWeekTeams = shuffleArray([...pickedNFL, ...pickedNCAA]);
 
             currentLeague.weeklyTeamPool = currentWeekTeams;
             saveLeaguesStorage();
             renderSpinnerTrack();
-            showToast("Commissioner re-rolled 30 new weekly teams (15 NFL + 15 NCAA)!");
+            showToast("Commissioner re-rolled 30 brand new weekly teams (15 NFL + 15 NCAA from 138 FBS)!");
         }
 
         function openSettingsModal() {
@@ -1752,7 +1868,6 @@
             renderMatchup();
         }
 
-        /* STREAMING_CHUNK:Fetching live rosters directly from ESPN endpoint for teams... */
         async function fetchTeamRosterFromESPN(teamObj) {
             if (TEAM_ROSTER_CACHE[teamObj.id]) {
                 return TEAM_ROSTER_CACHE[teamObj.id];
@@ -1760,7 +1875,6 @@
 
             const players = [];
 
-            // Add standard Team Defense/Special Teams unit
             players.push({
                 name: "Defense/Special Teams",
                 pos: "DST",
@@ -2089,7 +2203,6 @@
             return needed.join(", ");
         }
 
-        /* STREAMING_CHUNK:Opening live ESPN player modal with filter pills and starter priority... */
         async function openPlayerModalAuto(targetSlot) {
             if (!currentSpinTeam) {
                 showToast("Please spin the wheel first!");
@@ -2271,7 +2384,6 @@
             activeModalPositionFilter = 'ALL';
         }
 
-        /* STREAMING_CHUNK:Selecting player and updating active draft slot progress... */
         function selectPlayer(name, pos, projected) {
             if (!currentLeague.rosters[currentUser.name]) {
                 currentLeague.rosters[currentUser.name] = {};
@@ -2351,7 +2463,6 @@
             updateSpinButtonLockState();
         }
 
-        /* STREAMING_CHUNK:Rendering user roster and handling re-spin button actions... */
         function renderMyTeam() {
             const roster = (currentLeague && currentLeague.rosters[currentUser.name]) || {};
             const listEl = document.getElementById('roster-list');
@@ -2443,7 +2554,6 @@
             showToast("Live fantasy stats updated and synced!");
         }
 
-        /* STREAMING_CHUNK:Rendering head-to-head weekly matchups and final victory animations... */
         function renderMatchup() {
             populateOpponentDropdown();
 
@@ -2576,18 +2686,3 @@
     </script>
 </body>
 </html>
-```eof
-
-### Key Updates & Fixes:
-1. **Pre-Game Week Kickoff Fix**: Fixed `isCurrentWeekStarted` by evaluating only upcoming target week events (`targetNflEvents`) rather than completed past games. The commissioner's **Re-roll 30 Weekly Teams** button is now unlocked and functional prior to kickoff.
-2. **Scrollable Viewport-Contained League Settings Modal**:
-   - Fitted with `max-h-[88vh] flex flex-col overflow-hidden`.
-   - The body containing commissioner selection and custom scoring rules scrolls independently with `overflow-y-auto`, while the header and action buttons stay docked and accessible on any screen size.
-3. **Commissioner Controls & Scoring Customization**:
-   - Full commissioner assignment and governance.
-   - Comprehensive scoring rule multipliers (`Passing TD`, `Rush/Rec TD`, `Passing Yds`, `Rush/Rec Yds`, `PPR`, `INT`, `FG`, `D/ST Turnover/Sack`) that dynamically update fantasy projections across all rosters.
-4. **All Core Game Rules Preserved**:
-   - 30 randomized teams per week (15 NFL + 15 NCAA).
-   - Dynamic live ESPN rosters for both human managers and the AI opponent.
-   - 3 re-spins budget tracking and 9/9 full roster spinner lockout.
-   - Pre-game `0.0` score zeroing with Monday Night Football animation gating.
