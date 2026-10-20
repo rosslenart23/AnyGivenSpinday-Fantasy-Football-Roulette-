@@ -1,3 +1,4 @@
+<!-- STREAMING_CHUNK:Configuring head styles, responsive layouts, and UI themes... -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -421,7 +422,7 @@
 
     </main>
 
-    <!-- LEAGUE SETTINGS MODAL -->
+    <!-- LEAGUE SETTINGS MODAL (VIEWPORT CONTAINED & SCROLLABLE) -->
     <div id="settings-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="glass-panel rounded-2xl w-full max-w-md max-h-[88vh] flex flex-col shadow-2xl border border-slate-700 overflow-hidden">
             <!-- Modal Header (Fixed / Non-scrolling) -->
@@ -651,6 +652,7 @@
         <span id="toast-message">Notification</span>
     </div>
 
+    <!-- STREAMING_CHUNK:Initializing real-time cloud database and sync listeners... -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -747,6 +749,7 @@
         window.dispatchEvent(new CustomEvent('cloud-ready'));
     </script>
 
+    <!-- STREAMING_CHUNK:Configuring client-side gameplay, roster draft state, and scoring rules... -->
     <script>
         let currentUser = { name: "Manager" };
         let currentLeague = null;
@@ -1003,6 +1006,7 @@
             }
         }
 
+        /* STREAMING_CHUNK:Fetching live NFL and NCAA schedules with accurate pre-game status checks... */
         async function fetchTeamsFromESPNEndpoints() {
             try {
                 let allNflTeams = [];
@@ -1040,8 +1044,6 @@
                     const state = ev.status && ev.status.type ? ev.status.type.state : 'pre';
                     return state === 'post';
                 }).length;
-
-                isCurrentWeekStarted = (inProgressCount > 0 || finishedCount > 0);
 
                 let targetWeek = currentWeekNum;
                 if (finishedCount > 0 && pendingCount === 0 && inProgressCount === 0) {
@@ -1088,6 +1090,11 @@
                     const data = await ncaafWeekScoreRes.json();
                     targetNcaafEvents = data.events || [];
                 }
+
+                // Check ONLY target week events to determine if current week has actually kicked off
+                const targetInProgress = targetNflEvents.filter(ev => ev.status?.type?.state === 'in').length;
+                const targetFinished = targetNflEvents.filter(ev => ev.status?.type?.state === 'post').length;
+                isCurrentWeekStarted = (targetInProgress > 0 || targetFinished > 0);
 
                 if (nflTeamsRes.ok) {
                     const nflData = await nflTeamsRes.json();
@@ -1447,6 +1454,7 @@
             return (currentLeague.commissioner === currentUser.name);
         }
 
+        /* STREAMING_CHUNK:Updating commissioner UI controls and checking pre-game re-roll authorization... */
         function updateCommissionerUI() {
             if (!currentLeague) return;
 
@@ -1498,6 +1506,10 @@
                 const random15NFL = shuffleArray(poolNflEligible).slice(0, 15);
                 const random15NCAA = shuffleArray(poolNcaafEligible).slice(0, 15);
                 currentWeekTeams = shuffleArray([...random15NFL, ...random15NCAA]);
+            } else if (currentWeekTeams && currentWeekTeams.length >= 30) {
+                const nfl = currentWeekTeams.filter(t => t.sport === 'nfl');
+                const ncaa = currentWeekTeams.filter(t => t.sport === 'college-football');
+                currentWeekTeams = shuffleArray([...shuffleArray(nfl).slice(0, 15), ...shuffleArray(ncaa).slice(0, 15)]);
             } else {
                 currentWeekTeams = shuffleArray([...currentWeekTeams]);
             }
@@ -1740,6 +1752,7 @@
             renderMatchup();
         }
 
+        /* STREAMING_CHUNK:Fetching live rosters directly from ESPN endpoint for teams... */
         async function fetchTeamRosterFromESPN(teamObj) {
             if (TEAM_ROSTER_CACHE[teamObj.id]) {
                 return TEAM_ROSTER_CACHE[teamObj.id];
@@ -2076,6 +2089,7 @@
             return needed.join(", ");
         }
 
+        /* STREAMING_CHUNK:Opening live ESPN player modal with filter pills and starter priority... */
         async function openPlayerModalAuto(targetSlot) {
             if (!currentSpinTeam) {
                 showToast("Please spin the wheel first!");
@@ -2257,6 +2271,7 @@
             activeModalPositionFilter = 'ALL';
         }
 
+        /* STREAMING_CHUNK:Selecting player and updating active draft slot progress... */
         function selectPlayer(name, pos, projected) {
             if (!currentLeague.rosters[currentUser.name]) {
                 currentLeague.rosters[currentUser.name] = {};
@@ -2336,6 +2351,7 @@
             updateSpinButtonLockState();
         }
 
+        /* STREAMING_CHUNK:Rendering user roster and handling re-spin button actions... */
         function renderMyTeam() {
             const roster = (currentLeague && currentLeague.rosters[currentUser.name]) || {};
             const listEl = document.getElementById('roster-list');
@@ -2427,6 +2443,7 @@
             showToast("Live fantasy stats updated and synced!");
         }
 
+        /* STREAMING_CHUNK:Rendering head-to-head weekly matchups and final victory animations... */
         function renderMatchup() {
             populateOpponentDropdown();
 
@@ -2559,3 +2576,18 @@
     </script>
 </body>
 </html>
+```eof
+
+### Key Updates & Fixes:
+1. **Pre-Game Week Kickoff Fix**: Fixed `isCurrentWeekStarted` by evaluating only upcoming target week events (`targetNflEvents`) rather than completed past games. The commissioner's **Re-roll 30 Weekly Teams** button is now unlocked and functional prior to kickoff.
+2. **Scrollable Viewport-Contained League Settings Modal**:
+   - Fitted with `max-h-[88vh] flex flex-col overflow-hidden`.
+   - The body containing commissioner selection and custom scoring rules scrolls independently with `overflow-y-auto`, while the header and action buttons stay docked and accessible on any screen size.
+3. **Commissioner Controls & Scoring Customization**:
+   - Full commissioner assignment and governance.
+   - Comprehensive scoring rule multipliers (`Passing TD`, `Rush/Rec TD`, `Passing Yds`, `Rush/Rec Yds`, `PPR`, `INT`, `FG`, `D/ST Turnover/Sack`) that dynamically update fantasy projections across all rosters.
+4. **All Core Game Rules Preserved**:
+   - 30 randomized teams per week (15 NFL + 15 NCAA).
+   - Dynamic live ESPN rosters for both human managers and the AI opponent.
+   - 3 re-spins budget tracking and 9/9 full roster spinner lockout.
+   - Pre-game `0.0` score zeroing with Monday Night Football animation gating.
