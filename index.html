@@ -1,915 +1,925 @@
-<!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AnyGivenSpinday - Fantasy Football Roulette</title>
+    <title>Any Given Spinday - Weekly Fantasy Football Roulette</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #090d16;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .tab-active {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #ffffff;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        }
         .spinner-container {
-            height: 80px;
+            height: 120px;
             overflow: hidden;
             position: relative;
-            background: #1e293b;
-            border-radius: 0.5rem;
-            border: 2px solid #334155;
-            box-shadow: inset 0 4px 6px rgba(0,0,0,0.3);
+            background: #020617;
+            border-radius: 0.75rem;
+            border: 1px solid #1e293b;
         }
         .spinner-track {
             display: flex;
             flex-direction: column;
-            transition: transform 0.1s linear;
+            transition: transform 4s cubic-bezier(0.15, 0.85, 0.35, 1);
         }
         .spinner-item {
-            height: 80px;
+            height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
             font-weight: 900;
-            text-transform: uppercase;
+            font-size: 1.25rem;
             letter-spacing: 0.05em;
-            color: #e2e8f0;
+            color: #34d399;
+            text-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
+            text-transform: uppercase;
         }
-        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 10px; }
-        .toast { padding: 12px 20px; border-radius: 8px; background: #1e293b; border-left: 4px solid #10b981; box-shadow: 0 4px 6px rgba(0,0,0,0.3); animation: slideIn 0.3s ease-out forwards; }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .loader { border: 4px solid #334155; border-top: 4px solid #10b981; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .football-field {
-            background: #15803d; 
-            border: 2px solid rgba(255,255,255,0.8);
-            border-radius: 8px;
+            background: linear-gradient(to bottom, #047857, #065f46);
+            border-radius: 1rem;
+            border: 4px solid #ffffff;
             position: relative;
-            width: 100%;
-            height: 320px;
+            height: 380px;
             display: flex;
             flex-direction: column;
             justify-content: space-around;
-            padding: 10px;
-            overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+            padding: 1rem 0;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
         }
         .field-line {
             position: absolute;
-            left: 0; right: 0;
+            left: 0;
+            right: 0;
             height: 1px;
-            background: rgba(255,255,255,0.3);
-            pointer-events: none;
+            background: rgba(255, 255, 255, 0.3);
         }
         .pos-circle {
-            width: 44px; height: 44px;
+            width: 58px;
+            height: 58px;
             border-radius: 50%;
-            background: rgba(30, 41, 59, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            display: flex; align-items: center; justify-content: center; flex-direction: column;
-            font-size: 11px; font-weight: bold; color: white;
-            text-align: center;
-            transition: all 0.3s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid #34d399;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 900;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
             z-index: 10;
         }
-        .pos-filled {
+        .pos-circle:hover {
+            transform: scale(1.1);
             background: #047857;
-            border-color: #34d399;
-            width: auto; height: auto;
-            min-width: 60px; padding: 4px 8px;
-            border-radius: 8px;
+            border-color: #ffffff;
         }
-        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .tab-active { background: #059669 !important; color: white !important; }
-
-        /* Victory / Defeat Overlay Animations */
-        @keyframes fall {
-            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+        .pos-circle.filled {
+            background: #065f46;
+            border-color: #10b981;
+        }
+        @keyframes bounceSlow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .animate-bounce-slow {
+            animation: bounceSlow 1.5s infinite ease-in-out;
+        }
+        .loader {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top: 3px solid #10b981;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes dropParticle {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
         }
         .beer-particle {
             position: fixed;
             top: -50px;
             font-size: 2rem;
-            animation: fall linear infinite;
-            z-index: 200;
+            z-index: 999;
+            animation: dropParticle 3s linear forwards;
             pointer-events: none;
-        }
-        @keyframes zoomInBounce {
-            0% { transform: scale(0.2); opacity: 0; }
-            60% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .modal-animate {
-            animation: zoomInBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 h-full flex flex-col font-sans select-none">
+<body class="min-h-screen flex flex-col justify-between">
 
-<div id="auth-loading" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900">
-    <i class="fas fa-football-ball text-5xl text-emerald-500 animate-bounce mb-4"></i>
-    <h2 class="text-2xl font-bold tracking-tight">AnyGivenSpinday</h2>
-    <p class="text-slate-400 mt-2">Connecting to league servers...</p>
-</div>
-
-<!-- HEADER -->
-<header class="glass-panel border-b border-slate-800 sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
-    <div class="flex items-center gap-3 cursor-pointer" onclick="returnToLobby()">
-        <div class="bg-gradient-to-tr from-emerald-500 to-teal-400 p-2.5 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)]">
-            <i class="fas fa-football-ball text-slate-950 text-xl font-black"></i>
+    <header class="glass-panel border-b border-slate-800 sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="returnToLobby()">
+            <div class="bg-gradient-to-tr from-emerald-500 to-teal-400 p-2.5 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)]">
+                <i class="fas fa-football-ball text-slate-950 text-xl font-black"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-black tracking-wider bg-gradient-to-r from-white via-slate-200 to-emerald-400 bg-clip-text text-transparent">ANY GIVEN SPINDAY</h1>
+                <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Weekly Fantasy Roulette</p>
+            </div>
         </div>
-        <div>
-            <h1 class="text-xl font-black tracking-wider bg-gradient-to-r from-white via-slate-200 to-emerald-400 bg-clip-text text-transparent">ANY GIVEN SPINDAY</h1>
-            <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Weekly Fantasy Roulette</p>
+        <div class="flex items-center gap-3">
+            <button onclick="returnToLobby()" class="hidden md:flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold px-4 py-2 rounded-lg border border-slate-700 transition-colors">
+                <i class="fas fa-shield-alt text-emerald-400"></i> My Leagues
+            </button>
+            <div id="user-badge" class="bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 flex items-center gap-2">
+                <i class="fas fa-user-circle text-emerald-400 text-base"></i> <span id="display-manager-name">Guest</span>
+            </div>
         </div>
-    </div>
-    <div class="flex items-center gap-3">
-        <button onclick="returnToLobby()" class="hidden md:flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold px-4 py-2 rounded-lg border border-slate-700 transition-colors">
-            <i class="fas fa-shield-alt text-emerald-400"></i> My Leagues
-        </button>
-        <div id="user-badge" class="bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 flex items-center gap-2">
-            <i class="fas fa-user-circle text-emerald-400 text-base"></i> <span id="display-manager-name">Guest</span>
-        </div>
-    </div>
-</header>
+    </header>
 
-<!-- MAIN CONTAINER -->
-<main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex flex-col relative">
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex flex-col relative">
 
-    <!-- VIEW: LOBBY & LEAGUES DASHBOARD -->
-    <div id="view-lobby" class="flex flex-col flex-1 py-2">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="glass-panel rounded-2xl p-6 shadow-2xl h-fit">
-                <i class="fas fa-trophy text-4xl text-emerald-500 mb-4 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]"></i>
-                <h2 class="text-2xl font-black mb-2">New League</h2>
-                <p class="text-slate-400 mb-6 text-xs">Create a new AnyGivenSpinday league or join your friends.</p>
-                
-                <div class="mb-4 text-left">
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Your Manager Name</label>
-                    <input type="text" id="player-name" placeholder="e.g. Commissioner Rex" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 focus:outline-none focus:border-emerald-500 text-white text-sm">
-                </div>
-
-                <div class="space-y-4">
-                    <button onclick="createLeague()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-lg transition-colors flex justify-center items-center gap-2 text-sm shadow-lg shadow-emerald-900/40">
-                        <i class="fas fa-plus"></i> Create New League
-                    </button>
+        <!-- VIEW: LOBBY & LEAGUES DASHBOARD -->
+        <div id="view-lobby" class="flex flex-col flex-1 py-2">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-panel rounded-2xl p-6 shadow-2xl h-fit">
+                    <i class="fas fa-trophy text-4xl text-emerald-500 mb-4 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]"></i>
+                    <h2 class="text-2xl font-black mb-2">New League</h2>
+                    <p class="text-slate-400 mb-6 text-xs">Create an Any Given Spinday league or join your friends with a League ID.</p>
                     
-                    <div class="relative flex py-1 items-center">
-                        <div class="flex-grow border-t border-slate-700"></div>
-                        <span class="flex-shrink-0 mx-4 text-slate-500 text-xs font-bold uppercase">Or Join</span>
-                        <div class="flex-grow border-t border-slate-700"></div>
+                    <div class="mb-4 text-left">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Your Manager Name</label>
+                        <input type="text" id="player-name" placeholder="e.g. Commissioner Rex" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 focus:outline-none focus:border-emerald-500 text-white text-sm">
                     </div>
 
-                    <div class="flex gap-2">
-                        <input type="text" id="join-code" placeholder="League ID" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 focus:outline-none focus:border-emerald-500 text-white font-mono uppercase text-sm">
-                        <button onclick="joinLeague()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 px-4 rounded-lg transition-colors text-sm">
-                            Join
+                    <div class="space-y-4">
+                        <button onclick="createLeague()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-lg transition-colors flex justify-center items-center gap-2 text-sm shadow-lg shadow-emerald-900/40">
+                            <i class="fas fa-plus"></i> Create New League
                         </button>
+                        
+                        <div class="relative flex py-1 items-center">
+                            <div class="flex-grow border-t border-slate-700"></div>
+                            <span class="flex-shrink-0 mx-4 text-slate-500 text-xs font-bold uppercase">Or Join</span>
+                            <div class="flex-grow border-t border-slate-700"></div>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <input type="text" id="join-code" placeholder="League ID" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 focus:outline-none focus:border-emerald-500 text-white font-mono uppercase text-sm">
+                            <button onclick="joinLeague()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 px-4 rounded-lg transition-colors text-sm">
+                                Join
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 glass-panel rounded-2xl p-6 shadow-2xl flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-2xl font-black">My Leagues Hub</h2>
+                            <p class="text-slate-400 text-xs mt-0.5">Select a league below to check draft completion and active matchups.</p>
+                        </div>
+                        <span class="bg-slate-800 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-slate-700" id="leagues-count-badge">0 Active</span>
+                    </div>
+
+                    <div id="leagues-hub-list" class="space-y-3 flex-1 overflow-y-auto max-h-[480px] pr-1">
+                        <div class="text-center py-16 text-slate-500">
+                            <i class="fas fa-shield-alt text-4xl mb-3 opacity-30"></i>
+                            <p class="text-sm">You haven't joined any leagues yet.</p>
+                            <p class="text-xs mt-1">Create or join a league on the left to get started!</p>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="md:col-span-2 glass-panel rounded-2xl p-6 shadow-2xl flex flex-col">
-                <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h2 class="text-2xl font-black">My Leagues Hub</h2>
-                        <p class="text-slate-400 text-xs mt-0.5">Select a league below to check draft completion and active matchups.</p>
+        <!-- VIEW: LEAGUE ROOM -->
+        <div id="view-league" class="flex flex-col flex-1 hidden">
+            <div class="mb-6 bg-slate-800/50 rounded-xl p-4 border border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-black text-white flex items-center gap-2">
+                        <span id="league-name-display">League Name</span>
+                        <span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-1 rounded uppercase tracking-wider font-bold">Active</span>
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-1 flex items-center gap-2">
+                        ID: <span id="league-id-display" class="font-mono text-emerald-300 select-all"></span>
+                        <button onclick="copyToClipboard(document.getElementById('league-id-display').innerText)" class="hover:text-white" title="Copy ID"><i class="fas fa-copy"></i></button>
+                    </p>
+                </div>
+                <div class="flex bg-slate-900 rounded-lg p-1 overflow-x-auto w-full md:w-auto">
+                    <button onclick="switchTab('spin')" id="tab-spin" class="px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white transition-colors tab-active whitespace-nowrap"><i class="fas fa-sync-alt mr-1"></i> Spin Draft</button>
+                    <button onclick="switchTab('team')" id="tab-team" class="px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white transition-colors whitespace-nowrap"><i class="fas fa-clipboard-list mr-1"></i> My Team</button>
+                    <button onclick="switchTab('matchup')" id="tab-matchup" class="px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white transition-colors whitespace-nowrap"><i class="fas fa-fire mr-1"></i> Matchup</button>
+                    <button onclick="switchTab('standings')" id="tab-standings" class="px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white transition-colors whitespace-nowrap"><i class="fas fa-list-ol mr-1"></i> Standings</button>
+                </div>
+            </div>
+
+            <div class="flex-1 relative min-h-[450px]">
+                <!-- TAB: SPIN DRAFT -->
+                <div id="tab-content-spin" class="absolute inset-0 flex flex-col">
+                    <div class="glass-panel rounded-xl p-6 flex flex-col items-center justify-center flex-1 text-center">
+                        <h3 class="text-2xl font-black mb-2">Weekly Spin Draft</h3>
+                        <p class="text-slate-400 text-sm mb-8 max-w-md">The draft pool features 10 live NFL and 10 NCAA teams seeded for this week. Spin the wheel to land on a team, then scout and select your roster.</p>
+                        
+                        <div class="bg-slate-900 rounded-xl p-6 border border-slate-700 w-full max-w-md mb-8 relative shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                            <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-slate-900 text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-widest z-10">
+                                Live ESPN Pool (20 Weekly Teams)
+                            </div>
+                            
+                            <div class="spinner-container mb-6" id="spinner-container">
+                                <div class="spinner-track" id="spinner-track">
+                                    <div class="spinner-item">READY TO SPIN</div>
+                                </div>
+                                <div class="absolute inset-0 border-y-4 border-emerald-500 pointer-events-none opacity-50"></div>
+                            </div>
+
+                            <button id="spin-btn" onclick="startSpin()" class="w-full bg-gradient-to-b from-emerald-400 to-emerald-600 hover:from-emerald-300 hover:to-emerald-500 text-slate-900 font-black py-4 px-6 rounded-lg text-xl shadow-[0_4px_0_rgb(4,120,87)] active:shadow-[0_0px_0_rgb(4,120,87)] active:translate-y-1 transition-all">
+                                SPIN <i class="fas fa-dharmachakra ml-2"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="football-field w-full max-w-md mx-auto">
+                            <div class="field-line" style="top: 25%"></div>
+                            <div class="field-line" style="top: 50%; height: 2px; background: rgba(255,255,255,0.6)"></div>
+                            <div class="field-line" style="top: 75%"></div>
+                            
+                            <div class="flex justify-around w-full">
+                                <div id="field-pos-WR1" onclick="openPlayerModal('WR1')" class="pos-circle">WR1</div>
+                                <div id="field-pos-TE" onclick="openPlayerModal('TE')" class="pos-circle">TE</div>
+                                <div id="field-pos-WR2" onclick="openPlayerModal('WR2')" class="pos-circle">WR2</div>
+                            </div>
+                            <div class="flex justify-around w-full px-12">
+                                <div id="field-pos-QB" onclick="openPlayerModal('QB')" class="pos-circle">QB</div>
+                                <div id="field-pos-FLEX" onclick="openPlayerModal('FLEX')" class="pos-circle">FLEX</div>
+                            </div>
+                            <div class="flex justify-around w-full px-4">
+                                <div id="field-pos-RB1" onclick="openPlayerModal('RB1')" class="pos-circle">RB1</div>
+                                <div id="field-pos-RB2" onclick="openPlayerModal('RB2')" class="pos-circle">RB2</div>
+                            </div>
+                            <div class="flex justify-around w-full">
+                                <div id="field-pos-DST" onclick="openPlayerModal('DST')" class="pos-circle">D/ST</div>
+                                <div id="field-pos-K" onclick="openPlayerModal('K')" class="pos-circle">K</div>
+                            </div>
+                        </div>
+
+                        <div id="roster-progress" class="text-sm font-bold text-slate-400 mt-6">
+                            Roster Status: <span id="slots-filled" class="text-emerald-400">0</span> / 9 Filled
+                        </div>
                     </div>
-                    <span class="bg-slate-800 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-slate-700" id="leagues-count-badge">0 Active</span>
                 </div>
 
-                <div id="leagues-hub-list" class="space-y-3 flex-1 overflow-y-auto max-h-[480px] pr-1">
+                <!-- TAB: MY TEAM -->
+                <div id="tab-content-team" class="absolute inset-0 flex flex-col hidden overflow-y-auto pb-10">
+                    <div class="flex justify-between items-end mb-4">
+                        <h3 class="text-2xl font-black">My Roster</h3>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-bold text-slate-400 bg-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-700">Re-spins: <span id="respin-count" class="text-emerald-400">3</span></span>
+                            <button onclick="updateLiveScores()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg font-bold transition-colors shadow-lg">
+                                <i class="fas fa-sync mr-1"></i> Update Live Stats
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-panel rounded-xl border border-slate-700 overflow-hidden">
+                        <div class="grid grid-cols-12 gap-4 p-3 bg-slate-800/80 border-b border-slate-700 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            <div class="col-span-2 text-center">Pos</div>
+                            <div class="col-span-5">Player</div>
+                            <div class="col-span-3 text-center">Game Score</div>
+                            <div class="col-span-2 text-center">Action</div>
+                        </div>
+                        <div id="roster-list" class="divide-y divide-slate-700/50"></div>
+                    </div>
+                </div>
+
+                <!-- TAB: MATCHUP -->
+                <div id="tab-content-matchup" class="absolute inset-0 flex flex-col hidden overflow-y-auto pb-10">
+                    <h3 class="text-2xl font-black mb-6">Weekly Matchup</h3>
+                    <div class="glass-panel rounded-xl p-6 flex flex-col items-center justify-between gap-6 mb-6">
+                        <div class="flex w-full justify-between items-center px-4">
+                            <div class="flex-1 flex flex-col items-start">
+                                <h4 class="text-lg font-bold text-emerald-400 truncate max-w-[200px]" id="matchup-my-name">My Team</h4>
+                                <div class="text-4xl font-black text-white" id="matchup-my-score">0.0</div>
+                            </div>
+                            <div class="text-2xl font-black text-slate-600 italic px-4">VS</div>
+                            <div class="flex-1 flex flex-col items-end text-right">
+                                <h4 class="text-lg font-bold text-rose-400 truncate max-w-[200px] w-full" id="matchup-opp-name">Waiting...</h4>
+                                <div class="text-4xl font-black text-white w-full" id="matchup-opp-score">0.0</div>
+                            </div>
+                        </div>
+                        
+                        <div id="matchup-banner" class="w-full hidden text-center py-3 px-4 rounded-xl font-black text-lg uppercase tracking-wider shadow-lg"></div>
+
+                        <div class="w-full bg-slate-900 rounded-lg p-3 border border-slate-700 flex flex-col md:flex-row text-xs mt-2 gap-3">
+                            <div id="matchup-my-roster" class="flex-1 md:border-r border-slate-700 md:pr-3 space-y-2"></div>
+                            <div id="matchup-opp-roster" class="flex-1 md:pl-3 space-y-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: STANDINGS -->
+                <div id="tab-content-standings" class="absolute inset-0 flex flex-col hidden overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-2xl font-black">League Standings</h3>
+                    </div>
+                    <div class="glass-panel rounded-xl overflow-hidden border border-slate-700">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-800/80 border-b border-slate-700 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                <tr>
+                                    <th class="p-4">Rank</th>
+                                    <th class="p-4">Manager</th>
+                                    <th class="p-4 text-center">W-L-T</th>
+                                    <th class="p-4 text-right">Pts For</th>
+                                </tr>
+                            </thead>
+                            <tbody id="standings-body" class="divide-y divide-slate-700/50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- PLAYER DRAFT MODAL -->
+    <div id="player-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl border border-slate-700 overflow-hidden">
+            <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/60">
+                <div>
+                    <h3 class="font-black text-lg text-white" id="modal-title">Select Player</h3>
+                    <p class="text-xs text-slate-400">Scouted from ESPN Team Roster</p>
+                </div>
+                <button onclick="closePlayerModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-4 flex-1 overflow-y-auto">
+                <div id="players-loading" class="flex flex-col items-center justify-center py-10 text-slate-400 hidden">
+                    <div class="loader mb-3"></div>
+                    <p class="text-sm">Scouting players via ESPN...</p>
+                </div>
+                <div id="players-list" class="space-y-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-emerald-600 text-white font-bold px-5 py-3 rounded-xl shadow-2xl z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3">
+        <i class="fas fa-info-circle text-lg"></i>
+        <span id="toast-message">Notification</span>
+    </div>
+
+    <script>
+        let currentUser = { name: "Manager" };
+        let currentLeague = null;
+        let currentSpinTeam = null;
+        let activeTargetSlot = null;
+        let currentWeekTeams = [];
+        let leaguesData = JSON.parse(localStorage.getItem('any_given_spinday_leagues') || '{}');
+
+        const POSITIONS = ['QB', 'RB1', 'RB2', 'WR1', 'WR2', 'TE', 'FLEX', 'DST', 'K'];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedName = localStorage.getItem('any_given_spinday_user');
+            if (savedName) {
+                currentUser.name = savedName;
+                document.getElementById('player-name').value = savedName;
+                document.getElementById('display-manager-name').innerText = savedName;
+            }
+            renderLeaguesHub();
+        });
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3500);
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            showToast("Copied League ID to clipboard!");
+        }
+
+        function renderLeaguesHub() {
+            const listEl = document.getElementById('leagues-hub-list');
+            const countEl = document.getElementById('leagues-count-badge');
+            const leagueIds = Object.keys(leaguesData);
+
+            countEl.innerText = `${leagueIds.length} Active`;
+
+            if (leagueIds.length === 0) {
+                listEl.innerHTML = `
                     <div class="text-center py-16 text-slate-500">
                         <i class="fas fa-shield-alt text-4xl mb-3 opacity-30"></i>
                         <p class="text-sm">You haven't joined any leagues yet.</p>
                         <p class="text-xs mt-1">Create or join a league on the left to get started!</p>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- VIEW: LEAGUE ROOM -->
-    <div id="view-league" class="flex flex-col flex-1 hidden">
-        <div class="mb-6 bg-slate-800/50 rounded-xl p-4 border border-slate-700 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <h2 class="text-2xl font-black text-white flex items-center gap-2">
-                    <span id="league-name-display">League Name</span>
-                    <span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-1 rounded uppercase tracking-wider font-bold">Active</span>
-                </h2>
-                <p class="text-slate-400 text-sm mt-1 flex items-center gap-2">
-                    ID: <span id="league-id-display" class="font-mono text-emerald-300 select-all"></span>
-                    <button onclick="copyToClipboard(document.getElementById('league-id-display').innerText)" class="hover:text-white" title="Copy ID"><i class="fas fa-copy"></i></button>
-                </p>
-            </div>
-            <div class="flex bg-slate-900 rounded-lg p-1 overflow-x-auto w-full md:w-auto">
-                <button onclick="switchTab('spin')" id="tab-spin" class="px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white transition-colors tab-active whitespace-nowrap"><i class="fas fa-sync-alt mr-1"></i> Spin Draft</button>
-                <button onclick="switchTab('team')" id="tab-team" class="px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white transition-colors whitespace-nowrap"><i class="fas fa-clipboard-list mr-1"></i> My Team</button>
-                <button onclick="switchTab('matchup')" id="tab-matchup" class="px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white transition-colors whitespace-nowrap"><i class="fas fa-fire mr-1"></i> Matchup</button>
-                <button onclick="switchTab('standings')" id="tab-standings" class="px-4 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white transition-colors whitespace-nowrap"><i class="fas fa-list-ol mr-1"></i> Standings</button>
-            </div>
-        </div>
-
-        <div class="flex-1 relative min-h-[450px]">
-            <!-- TAB: SPIN DRAFT -->
-            <div id="tab-content-spin" class="absolute inset-0 flex flex-col">
-                <div class="glass-panel rounded-xl p-6 flex flex-col items-center justify-center flex-1 text-center">
-                    <h3 class="text-2xl font-black mb-2">Weekly Spin Draft</h3>
-                    <p class="text-slate-400 text-sm mb-8 max-w-md">The draft pool features 10 live NFL and 10 NCAA teams seeded for this week. Spin the wheel to land on a team, then scout and select your roster.</p>
-                    
-                    <div class="bg-slate-900 rounded-xl p-6 border border-slate-700 w-full max-w-md mb-8 relative shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                        <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-slate-900 text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-widest z-10">
-                            Live ESPN Pool (20 Weekly Teams)
-                        </div>
-                        
-                        <div class="spinner-container mb-6" id="spinner-container">
-                            <div class="spinner-track" id="spinner-track">
-                                <div class="spinner-item">READY TO SPIN</div>
-                            </div>
-                            <div class="absolute inset-0 border-y-4 border-emerald-500 pointer-events-none opacity-50"></div>
-                        </div>
-
-                        <button id="spin-btn" onclick="startSpin()" class="w-full bg-gradient-to-b from-emerald-400 to-emerald-600 hover:from-emerald-300 hover:to-emerald-500 text-slate-900 font-black py-4 px-6 rounded-lg text-xl shadow-[0_4px_0_rgb(4,120,87)] active:shadow-[0_0px_0_rgb(4,120,87)] active:translate-y-1 transition-all">
-                            SPIN <i class="fas fa-dharmachakra ml-2"></i>
-                        </button>
-                    </div>
-                    
-                    <div class="football-field w-full max-w-md mx-auto">
-                        <div class="field-line" style="top: 25%"></div>
-                        <div class="field-line" style="top: 50%; height: 2px; background: rgba(255,255,255,0.6)"></div>
-                        <div class="field-line" style="top: 75%"></div>
-                        
-                        <div class="flex justify-around w-full">
-                            <div id="field-pos-WR1" onclick="openPlayerModal('WR1')" class="pos-circle">WR1</div>
-                            <div id="field-pos-TE" onclick="openPlayerModal('TE')" class="pos-circle">TE</div>
-                            <div id="field-pos-WR2" onclick="openPlayerModal('WR2')" class="pos-circle">WR2</div>
-                        </div>
-                        <div class="flex justify-around w-full px-12">
-                            <div id="field-pos-QB" onclick="openPlayerModal('QB')" class="pos-circle">QB</div>
-                            <div id="field-pos-FLEX" onclick="openPlayerModal('FLEX')" class="pos-circle">FLEX</div>
-                        </div>
-                        <div class="flex justify-around w-full px-4">
-                            <div id="field-pos-RB1" onclick="openPlayerModal('RB1')" class="pos-circle">RB1</div>
-                            <div id="field-pos-RB2" onclick="openPlayerModal('RB2')" class="pos-circle">RB2</div>
-                        </div>
-                        <div class="flex justify-around w-full">
-                            <div id="field-pos-DST" onclick="openPlayerModal('DST')" class="pos-circle">D/ST</div>
-                            <div id="field-pos-K" onclick="openPlayerModal('K')" class="pos-circle">K</div>
-                        </div>
-                    </div>
-
-                    <div id="roster-progress" class="text-sm font-bold text-slate-400 mt-6">
-                        Roster Status: <span id="slots-filled" class="text-emerald-400">0</span> / 9 Filled
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB: MY TEAM -->
-            <div id="tab-content-team" class="absolute inset-0 flex flex-col hidden overflow-y-auto pb-10">
-                <div class="flex justify-between items-end mb-4">
-                    <h3 class="text-2xl font-black">My Roster</h3>
-                    <div class="flex items-center gap-3">
-                        <span class="text-xs font-bold text-slate-400 bg-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-700">Re-spins: <span id="respin-count" class="text-emerald-400">3</span></span>
-                        <button onclick="updateLiveScores()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg font-bold transition-colors shadow-lg">
-                            <i class="fas fa-sync mr-1"></i> Update Live Stats
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="glass-panel rounded-xl border border-slate-700 overflow-hidden">
-                    <div class="grid grid-cols-12 gap-4 p-3 bg-slate-800/80 border-b border-slate-700 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                        <div class="col-span-2 text-center">Pos</div>
-                        <div class="col-span-5">Player</div>
-                        <div class="col-span-3 text-center">Game Score</div>
-                        <div class="col-span-2 text-center">Action</div>
-                    </div>
-                    <div id="roster-list" class="divide-y divide-slate-700/50"></div>
-                </div>
-            </div>
-
-            <!-- TAB: MATCHUP -->
-            <div id="tab-content-matchup" class="absolute inset-0 flex flex-col hidden overflow-y-auto pb-10">
-                <h3 class="text-2xl font-black mb-6">Weekly Matchup</h3>
-                <div class="glass-panel rounded-xl p-6 flex flex-col items-center justify-between gap-6 mb-6">
-                    <div class="flex w-full justify-between items-center px-4">
-                        <div class="flex-1 flex flex-col items-start">
-                            <h4 class="text-lg font-bold text-emerald-400 truncate max-w-[200px]" id="matchup-my-name">My Team</h4>
-                            <div class="text-4xl font-black text-white" id="matchup-my-score">0.0</div>
-                        </div>
-                        <div class="text-2xl font-black text-slate-600 italic px-4">VS</div>
-                        <div class="flex-1 flex flex-col items-end text-right">
-                            <h4 class="text-lg font-bold text-rose-400 truncate max-w-[200px] w-full" id="matchup-opp-name">Waiting...</h4>
-                            <div class="text-4xl font-black text-white w-full" id="matchup-opp-score">0.0</div>
-                        </div>
-                    </div>
-                    
-                    <div id="matchup-banner" class="w-full hidden text-center py-3 px-4 rounded-xl font-black text-lg uppercase tracking-wider shadow-lg"></div>
-
-                    <div class="w-full bg-slate-900 rounded-lg p-3 border border-slate-700 flex flex-col md:flex-row text-xs mt-2 gap-3">
-                        <div id="matchup-my-roster" class="flex-1 md:border-r border-slate-700 md:pr-3 space-y-2"></div>
-                        <div id="matchup-opp-roster" class="flex-1 md:pl-3 space-y-2"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB: STANDINGS -->
-            <div id="tab-content-standings" class="absolute inset-0 flex flex-col hidden overflow-y-auto">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-2xl font-black">League Standings</h3>
-                </div>
-                <div class="glass-panel rounded-xl overflow-hidden border border-slate-700">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-800/80 border-b border-slate-700 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                            <tr>
-                                <th class="p-4">Rank</th>
-                                <th class="p-4">Manager</th>
-                                <th class="p-4 text-center">W-L-T</th>
-                                <th class="p-4 text-right">Pts For</th>
-                            </tr>
-                        </thead>
-                        <tbody id="standings-body" class="divide-y divide-slate-700/50"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-</main>
-
-<!-- PLAYER DRAFT MODAL -->
-<div id="player-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-panel rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col shadow-2xl border border-slate-700 overflow-hidden">
-        <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/60">
-            <div>
-                <h3 class="font-black text-lg text-white" id="modal-title">Select Player</h3>
-                <p class="text-xs text-slate-400">Scouted from ESPN Team Roster</p>
-            </div>
-            <button onclick="closePlayerModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="p-4 flex-1 overflow-y-auto">
-            <div id="players-loading" class="flex flex-col items-center justify-center py-10 text-slate-400 hidden">
-                <div class="loader mb-3"></div>
-                <p class="text-sm">Scouting players via ESPN...</p>
-            </div>
-            <div id="players-list" class="space-y-2"></div>
-        </div>
-    </div>
-</div>
-
-<!-- TOAST NOTIFICATION -->
-<div id="toast" class="fixed bottom-6 right-6 bg-emerald-600 text-white font-bold px-5 py-3 rounded-xl shadow-2xl z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3">
-    <i class="fas fa-info-circle text-lg"></i>
-    <span id="toast-message">Notification</span>
-</div>
-
-<script>
-    // CORE APP STATE
-    let currentUser = { name: "Manager" };
-    let currentLeague = null;
-    let currentSpinTeam = null;
-    let activeTargetSlot = null;
-    let currentWeekTeams = [];
-    let leaguesData = JSON.parse(localStorage.getItem('any_given_spinday_leagues') || '{}');
-
-    const POSITIONS = ['QB', 'RB1', 'RB2', 'WR1', 'WR2', 'TE', 'FLEX', 'DST', 'K'];
-
-    window.addEventListener('DOMContentLoaded', () => {
-        const savedName = localStorage.getItem('any_given_spinday_user');
-        if (savedName) {
-            currentUser.name = savedName;
-            document.getElementById('player-name').value = savedName;
-            document.getElementById('display-manager-name').innerText = savedName;
-        }
-        renderLeaguesHub();
-    });
-
-    function showToast(msg) {
-        const toast = document.getElementById('toast');
-        document.getElementById('toast-message').innerText = msg;
-        toast.classList.remove('translate-y-20', 'opacity-0');
-        setTimeout(() => {
-            toast.classList.add('translate-y-20', 'opacity-0');
-        }, 3500);
-    }
-
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text);
-        showToast("Copied League ID to clipboard!");
-    }
-
-    // LEAGUES HUB MANAGEMENT
-    function renderLeaguesHub() {
-        const listEl = document.getElementById('leagues-hub-list');
-        const countEl = document.getElementById('leagues-count-badge');
-        const leagueIds = Object.keys(leaguesData);
-
-        countEl.innerText = `${leagueIds.length} Active`;
-
-        if (leagueIds.length === 0) {
-            listEl.innerHTML = `
-                <div class="text-center py-16 text-slate-500">
-                    <i class="fas fa-shield-alt text-4xl mb-3 opacity-30"></i>
-                    <p class="text-sm">You haven't joined any leagues yet.</p>
-                    <p class="text-xs mt-1">Create or join a league on the left to get started!</p>
-                </div>
-            `;
-            return;
-        }
-
-        let html = '';
-        leagueIds.forEach(id => {
-            const lg = leaguesData[id];
-            const roster = lg.rosters && lg.rosters[currentUser.name] ? lg.rosters[currentUser.name] : {};
-            const filledCount = Object.keys(roster).length;
-            const isComplete = filledCount >= 9;
-
-            html += `
-                <div onclick="enterLeague('${id}')" class="glass-panel p-4 rounded-xl border border-slate-700/80 hover:border-emerald-500/60 transition-all cursor-pointer flex justify-between items-center group">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-slate-800 group-hover:bg-emerald-600/20 w-10 h-10 rounded-lg flex items-center justify-center transition-colors">
-                            <i class="fas fa-trophy text-emerald-400"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-white group-hover:text-emerald-300 transition-colors">${lg.name}</h4>
-                            <p class="text-xs text-slate-400 font-mono">ID: ${id} • Members: ${Object.keys(lg.rosters || {}).length}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="text-xs font-bold px-3 py-1 rounded-full ${isComplete ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}">
-                            ${isComplete ? 'Draft Complete' : `Action Required (${filledCount}/9)`}
-                        </span>
-                        <i class="fas fa-chevron-right text-slate-500 group-hover:text-white transition-colors"></i>
-                    </div>
-                </div>
-            `;
-        });
-        listEl.innerHTML = html;
-    }
-
-    function createLeague() {
-        const nameInput = document.getElementById('player-name').value.trim();
-        if (!nameInput) {
-            showToast("Please enter your manager name first!");
-            return;
-        }
-        currentUser.name = nameInput;
-        localStorage.setItem('any_given_spinday_user', nameInput);
-        document.getElementById('display-manager-name').innerText = nameInput;
-
-        const leagueId = Math.random().toString(36).substring(2, 8).toUpperCase();
-        const leagueName = `${nameInput.split(' ')[0]}'s League`;
-
-        leaguesData[leagueId] = {
-            name: leagueName,
-            createdAt: new Date().toISOString(),
-            rosters: {
-                [currentUser.name]: {}
-            },
-            matchups: {},
-            standings: {
-                [currentUser.name]: { wins: 0, losses: 0, ties: 0, pts: 0 }
-            }
-        };
-
-        saveLeaguesStorage();
-        renderLeaguesHub();
-        enterLeague(leagueId);
-        showToast("Successfully created new league!");
-    }
-
-    function joinLeague() {
-        const nameInput = document.getElementById('player-name').value.trim();
-        const joinId = document.getElementById('join-code').value.trim().toUpperCase();
-
-        if (!nameInput) {
-            showToast("Please enter your manager name first!");
-            return;
-        }
-        if (!joinId) {
-            showToast("Please enter a League ID!");
-            return;
-        }
-
-        currentUser.name = nameInput;
-        localStorage.setItem('any_given_spinday_user', nameInput);
-        document.getElementById('display-manager-name').innerText = nameInput;
-
-        if (!leaguesData[joinId]) {
-            showToast("League ID not found! Check with your commissioner.");
-            return;
-        }
-
-        if (!leaguesData[joinId].rosters[currentUser.name]) {
-            leaguesData[joinId].rosters[currentUser.name] = {};
-        }
-        if (!leaguesData[joinId].standings[currentUser.name]) {
-            leaguesData[joinId].standings[currentUser.name] = { wins: 0, losses: 0, ties: 0, pts: 0 };
-        }
-
-        saveLeaguesStorage();
-        renderLeaguesHub();
-        enterLeague(joinId);
-        showToast("Successfully joined league!");
-    }
-
-    function enterLeague(leagueId) {
-        currentLeague = leaguesData[leagueId];
-        currentLeague.id = leagueId;
-
-        document.getElementById('league-name-display').innerText = currentLeague.name;
-        document.getElementById('league-id-display').innerText = leagueId;
-
-        document.getElementById('view-lobby').classList.add('hidden');
-        document.getElementById('view-league').classList.remove('hidden');
-
-        fetchWeeklyTeamsFromAPI();
-        switchTab('spin');
-    }
-
-    function returnToLobby() {
-        currentLeague = null;
-        document.getElementById('view-league').classList.add('hidden');
-        document.getElementById('view-lobby').classList.remove('hidden');
-        renderLeaguesHub();
-    }
-
-    function saveLeaguesStorage() {
-        if (currentLeague && currentLeague.id) {
-            leaguesData[currentLeague.id] = currentLeague;
-        }
-        localStorage.setItem('any_given_spinday_leagues', JSON.stringify(leaguesData));
-    }
-
-    // TAB SWITCHING
-    function switchTab(tabName) {
-        ['spin', 'team', 'matchup', 'standings'].forEach(t => {
-            document.getElementById(`tab-${t}`).classList.remove('tab-active');
-            document.getElementById(`tab-content-${t}`).classList.add('hidden');
-        });
-        document.getElementById(`tab-${tabName}`).classList.add('tab-active');
-        document.getElementById(`tab-content-${tabName}`).classList.remove('hidden');
-
-        if (tabName === 'team') renderMyTeam();
-        if (tabName === 'matchup') renderMatchup();
-        if (tabName === 'standings') renderStandings();
-    }
-
-    // FETCH WEEKLY TEAMS FROM ESPN API WITH FALLBACK
-    async function fetchWeeklyTeamsFromAPI() {
-        const track = document.getElementById('spinner-track');
-        track.innerHTML = `<div class="spinner-item">SYNCING ESPN POOL...</div>`;
-
-        const fallbackTeams = [
-            { name: "Kansas City Chiefs", abbrev: "KC", sport: "NFL", date: "Sun Oct 25 4:25 PM" },
-            { name: "San Francisco 49ers", abbrev: "SF", sport: "NFL", date: "Sun Oct 25 8:20 PM" },
-            { name: "Philadelphia Eagles", abbrev: "PHI", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
-            { name: "Buffalo Bills", abbrev: "BUF", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
-            { name: "Detroit Lions", abbrev: "DET", sport: "NFL", date: "Mon Oct 26 8:15 PM" },
-            { name: "Baltimore Ravens", abbrev: "BAL", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
-            { name: "Dallas Cowboys", abbrev: "DAL", sport: "NFL", date: "Sun Oct 25 8:20 PM" },
-            { name: "Miami Dolphins", abbrev: "MIA", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
-            { name: "Cincinnati Bengals", abbrev: "CIN", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
-            { name: "Green Bay Packers", abbrev: "GB", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
-            { name: "Georgia Bulldogs", abbrev: "UGA", sport: "NCAAF", date: "Sat Oct 24 3:30 PM" },
-            { name: "Ohio State Buckeyes", abbrev: "OSU", sport: "NCAAF", date: "Sat Oct 24 12:00 PM" },
-            { name: "Texas Longhorns", abbrev: "TEX", sport: "NCAAF", date: "Sat Oct 24 7:30 PM" },
-            { name: "Alabama Crimson Tide", abbrev: "ALA", sport: "NCAAF", date: "Sat Oct 24 7:00 PM" },
-            { name: "Oregon Ducks", abbrev: "ORE", sport: "NCAAF", date: "Sat Oct 24 4:00 PM" },
-            { name: "Michigan Wolverines", abbrev: "MICH", sport: "NCAAF", date: "Sat Oct 24 3:30 PM" },
-            { name: "USC Trojans", abbrev: "USC", sport: "NCAAF", date: "Sat Oct 24 10:30 PM" },
-            { name: "LSU Tigers", abbrev: "LSU", sport: "NCAAF", date: "Sat Oct 24 7:45 PM" },
-            { name: "Penn State Nittany Lions", abbrev: "PSU", sport: "NCAAF", date: "Sat Oct 24 12:00 PM" },
-            { name: "Notre Dame Fighting Irish", abbrev: "ND", sport: "NCAAF", date: "Sat Oct 24 2:30 PM" }
-        ];
-
-        try {
-            const nflRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard').catch(() => null);
-            const ncfRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard').catch(() => null);
-
-            let fetchedTeams = [];
-
-            if (nflRes && nflRes.ok) {
-                const data = await nflRes.json();
-                if (data && data.events) {
-                    data.events.forEach(ev => {
-                        const comp = ev.competitions[0];
-                        const dStr = new Date(comp.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-                        comp.competitors.forEach(c => {
-                            fetchedTeams.push({ name: c.team.displayName, abbrev: c.team.abbreviation, sport: 'NFL', date: dStr });
-                        });
-                    });
-                }
+                `;
+                return;
             }
 
-            if (ncfRes && ncfRes.ok) {
-                const data = await ncfRes.json();
-                if (data && data.events) {
-                    data.events.forEach(ev => {
-                        const comp = ev.competitions[0];
-                        const dStr = new Date(comp.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-                        comp.competitors.forEach(c => {
-                            fetchedTeams.push({ name: c.team.displayName, abbrev: c.team.abbreviation, sport: 'NCAAF', date: dStr });
-                        });
-                    });
-                }
-            }
-
-            if (fetchedTeams.length < 10) {
-                currentWeekTeams = fallbackTeams;
-            } else {
-                const now = new Date();
-                const weekNum = Math.floor(now.getTime() / (7 * 86400000));
-                let shuffled = [...fetchedTeams];
-                for (let i = shuffled.length - 1; i > 0; i--) {
-                    let j = Math.floor(Math.abs(Math.sin(weekNum + i)) * (i + 1));
-                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-                }
-                const nflPool = shuffled.filter(t => t.sport === 'NFL').slice(0, 10);
-                const ncfPool = shuffled.filter(t => t.sport === 'NCAAF').slice(0, 10);
-                currentWeekTeams = [...nflPool, ...ncfPool];
-                if (currentWeekTeams.length === 0) currentWeekTeams = fallbackTeams;
-            }
-        } catch (err) {
-            currentWeekTeams = fallbackTeams;
-        }
-
-        renderSpinnerTrack();
-    }
-
-    function renderSpinnerTrack() {
-        const track = document.getElementById('spinner-track');
-        let html = '';
-        currentWeekTeams.forEach(t => {
-            html += `<div class="spinner-item">${t.sport}: ${t.name}</div>`;
-        });
-        currentWeekTeams.slice(0, 5).forEach(t => {
-            html += `<div class="spinner-item">${t.sport}: ${t.name}</div>`;
-        });
-        track.innerHTML = html;
-    }
-
-    // SPIN MECHANIC
-    function startSpin() {
-        if (currentWeekTeams.length === 0) return;
-        const btn = document.getElementById('spin-btn');
-        btn.disabled = true;
-
-        const track = document.getElementById('spinner-track');
-        const winningIndex = Math.floor(Math.random() * currentWeekTeams.length);
-        const itemHeight = 120;
-        const targetOffset = -(winningIndex * itemHeight);
-
-        track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.35, 1)';
-        track.style.transform = `translateY(${targetOffset}px)`;
-
-        setTimeout(() => {
-            currentSpinTeam = currentWeekTeams[winningIndex];
-            btn.disabled = false;
-            showToast(`Landed on ${currentSpinTeam.name}! Choose an empty roster position.`);
-            highlightEmptyPositions();
-        }, 4100);
-    }
-
-    function highlightEmptyPositions() {
-        const roster = currentLeague.rosters[currentUser.name] || {};
-        POSITIONS.forEach(pos => {
-            const el = document.getElementById(`field-pos-${pos}`);
-            if (!roster[pos]) {
-                el.classList.add('animate-bounce-slow');
-            }
-        });
-    }
-
-    // PLAYER DRAFT MODAL (WITH DUPLICATE PREVENTION & GAME DATES)
-    async function openPlayerModal(pos) {
-        activeTargetSlot = pos;
-        if (!currentSpinTeam) {
-            showToast("You must spin the wheel first to select a team!");
-            return;
-        }
-
-        const modal = document.getElementById('player-modal');
-        const listEl = document.getElementById('players-list');
-        const loader = document.getElementById('players-loading');
-        const titleEl = document.getElementById('modal-title');
-
-        titleEl.innerText = `Draft ${pos} from ${currentSpinTeam.name} (${currentSpinTeam.date})`;
-        modal.classList.remove('hidden');
-        listEl.innerHTML = '';
-        loader.classList.remove('hidden');
-
-        setTimeout(() => {
-            loader.classList.add('hidden');
-            let players = generateSamplePlayers(currentSpinTeam, pos);
             let html = '';
+            leagueIds.forEach(id => {
+                const lg = leaguesData[id];
+                const roster = lg.rosters && lg.rosters[currentUser.name] ? lg.rosters[currentUser.name] : {};
+                const filledCount = Object.keys(roster).length;
+                const isComplete = filledCount >= 9;
 
-            const userRoster = currentLeague.rosters[currentUser.name] || {};
-            const draftedNames = Object.values(userRoster).map(p => p.name);
-
-            players.forEach(p => {
-                const alreadyOnRoster = draftedNames.includes(p.name);
                 html += `
-                    <div class="glass-panel p-3 rounded-xl flex justify-between items-center border border-slate-700/60 ${alreadyOnRoster ? 'opacity-50' : 'hover:border-emerald-500'} transition-all">
-                        <div>
-                            <h4 class="font-bold text-sm text-white">${p.name}</h4>
-                            <p class="text-[10px] text-slate-400">${p.pos} • Game: ${currentSpinTeam.date} ${alreadyOnRoster ? '<span class="text-amber-400 font-bold ml-1">(On Roster)</span>' : ''}</p>
+                    <div onclick="enterLeague('${id}')" class="glass-panel p-4 rounded-xl border border-slate-700/80 hover:border-emerald-500/60 transition-all cursor-pointer flex justify-between items-center group">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-slate-800 group-hover:bg-emerald-600/20 w-10 h-10 rounded-lg flex items-center justify-center transition-colors">
+                                <i class="fas fa-trophy text-emerald-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white group-hover:text-emerald-300 transition-colors">${lg.name}</h4>
+                                <p class="text-xs text-slate-400 font-mono">ID: ${id} • Members: ${Object.keys(lg.rosters || {}).length}</p>
+                            </div>
                         </div>
-                        <button ${alreadyOnRoster ? 'disabled' : `onclick="selectPlayer('${p.name}', '${p.pos}')"`} class="px-3 py-1.5 rounded-lg text-xs font-bold ${alreadyOnRoster ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'} transition-colors">
-                            ${alreadyOnRoster ? 'On Roster' : 'Draft'}
-                        </button>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-bold px-3 py-1 rounded-full ${isComplete ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}">
+                                ${isComplete ? 'Draft Complete' : `Action Required (${filledCount}/9)`}
+                            </span>
+                            <i class="fas fa-chevron-right text-slate-500 group-hover:text-white transition-colors"></i>
+                        </div>
                     </div>
                 `;
             });
             listEl.innerHTML = html;
-        }, 600);
-    }
+        }
 
-    function closePlayerModal() {
-        document.getElementById('player-modal').classList.add('hidden');
-    }
+        function createLeague() {
+            const nameInput = document.getElementById('player-name').value.trim();
+            if (!nameInput) {
+                showToast("Please enter your manager name first!");
+                return;
+            }
+            currentUser.name = nameInput;
+            localStorage.setItem('any_given_spinday_user', nameInput);
+            document.getElementById('display-manager-name').innerText = nameInput;
 
-    function generateSamplePlayers(team, pos) {
-        const firstNames = ["Marcus", "Trevor", "Jordan", "Caleb", "Jalen", "Malik", "DeVonta", "Bijan", "Brock", "Tyreek", "Justin", "Amon-Ra", "Ja'Marr", "Davante", "Pat"];
-        const lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Wilson", "Anderson", "Taylor", "Thomas", "Moore", "Jackson", "Martin", "Lee"];
-        
-        let count = 4;
-        let results = [];
-        for (let i = 0; i < count; i++) {
-            let name = `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
-            results.push({
-                name: name,
-                pos: pos === 'FLEX' ? (Math.random() > 0.5 ? 'RB' : 'WR') : pos
+            const leagueId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            const leagueName = `${nameInput.split(' ')[0]}'s League`;
+
+            leaguesData[leagueId] = {
+                name: leagueName,
+                createdAt: new Date().toISOString(),
+                rosters: {
+                    [currentUser.name]: {}
+                },
+                matchups: {},
+                standings: {
+                    [currentUser.name]: { wins: 0, losses: 0, ties: 0, pts: 0 }
+                }
+            };
+
+            saveLeaguesStorage();
+            renderLeaguesHub();
+            enterLeague(leagueId);
+            showToast("Successfully created new league!");
+        }
+
+        function joinLeague() {
+            const nameInput = document.getElementById('player-name').value.trim();
+            const joinId = document.getElementById('join-code').value.trim().toUpperCase();
+
+            if (!nameInput) {
+                showToast("Please enter your manager name first!");
+                return;
+            }
+            if (!joinId) {
+                showToast("Please enter a League ID!");
+                return;
+            }
+
+            currentUser.name = nameInput;
+            localStorage.setItem('any_given_spinday_user', nameInput);
+            document.getElementById('display-manager-name').innerText = nameInput;
+
+            if (!leaguesData[joinId]) {
+                showToast("League ID Not Found");
+                return;
+            }
+
+            if (!leaguesData[joinId].rosters[currentUser.name]) {
+                leaguesData[joinId].rosters[currentUser.name] = {};
+            }
+            if (!leaguesData[joinId].standings[currentUser.name]) {
+                leaguesData[joinId].standings[currentUser.name] = { wins: 0, losses: 0, ties: 0, pts: 0 };
+            }
+
+            saveLeaguesStorage();
+            renderLeaguesHub();
+            enterLeague(joinId);
+            showToast("Successfully joined league!");
+        }
+
+        function enterLeague(leagueId) {
+            if (!leaguesData[leagueId]) {
+                showToast("League ID Not Found");
+                return;
+            }
+            currentLeague = leaguesData[leagueId];
+            currentLeague.id = leagueId;
+
+            document.getElementById('league-name-display').innerText = currentLeague.name;
+            document.getElementById('league-id-display').innerText = leagueId;
+
+            document.getElementById('view-lobby').classList.add('hidden');
+            document.getElementById('view-league').classList.remove('hidden');
+
+            fetchWeeklyTeamsFromAPI();
+            switchTab('spin');
+        }
+
+        function returnToLobby() {
+            currentLeague = null;
+            document.getElementById('view-league').classList.add('hidden');
+            document.getElementById('view-lobby').classList.remove('hidden');
+            renderLeaguesHub();
+        }
+
+        function saveLeaguesStorage() {
+            if (currentLeague && currentLeague.id) {
+                leaguesData[currentLeague.id] = currentLeague;
+            }
+            localStorage.setItem('any_given_spinday_leagues', JSON.stringify(leaguesData));
+        }
+
+        function switchTab(tabName) {
+            ['spin', 'team', 'matchup', 'standings'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.remove('tab-active');
+                document.getElementById(`tab-content-${t}`).classList.add('hidden');
+            });
+            document.getElementById(`tab-${tabName}`).classList.add('tab-active');
+            document.getElementById(`tab-content-${tabName}`).classList.remove('hidden');
+
+            if (tabName === 'team') renderMyTeam();
+            if (tabName === 'matchup') renderMatchup();
+            if (tabName === 'standings') renderStandings();
+        }
+
+        async function fetchWeeklyTeamsFromAPI() {
+            const track = document.getElementById('spinner-track');
+            track.innerHTML = `<div class="spinner-item">SYNCING ESPN POOL...</div>`;
+
+            const fallbackTeams = [
+                { name: "Kansas City Chiefs", abbrev: "KC", sport: "NFL", date: "Sun Oct 25 4:25 PM" },
+                { name: "San Francisco 49ers", abbrev: "SF", sport: "NFL", date: "Sun Oct 25 8:20 PM" },
+                { name: "Philadelphia Eagles", abbrev: "PHI", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
+                { name: "Buffalo Bills", abbrev: "BUF", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
+                { name: "Detroit Lions", abbrev: "DET", sport: "NFL", date: "Mon Oct 26 8:15 PM" },
+                { name: "Baltimore Ravens", abbrev: "BAL", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
+                { name: "Dallas Cowboys", abbrev: "DAL", sport: "NFL", date: "Sun Oct 25 8:20 PM" },
+                { name: "Miami Dolphins", abbrev: "MIA", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
+                { name: "Cincinnati Bengals", abbrev: "CIN", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
+                { name: "Green Bay Packers", abbrev: "GB", sport: "NFL", date: "Sun Oct 25 1:00 PM" },
+                { name: "Georgia Bulldogs", abbrev: "UGA", sport: "NCAAF", date: "Sat Oct 24 3:30 PM" },
+                { name: "Ohio State Buckeyes", abbrev: "OSU", sport: "NCAAF", date: "Sat Oct 24 12:00 PM" },
+                { name: "Texas Longhorns", abbrev: "TEX", sport: "NCAAF", date: "Sat Oct 24 7:30 PM" },
+                { name: "Alabama Crimson Tide", abbrev: "ALA", sport: "NCAAF", date: "Sat Oct 24 7:00 PM" },
+                { name: "Oregon Ducks", abbrev: "ORE", sport: "NCAAF", date: "Sat Oct 24 4:00 PM" },
+                { name: "Michigan Wolverines", abbrev: "MICH", sport: "NCAAF", date: "Sat Oct 24 3:30 PM" },
+                { name: "USC Trojans", abbrev: "USC", sport: "NCAAF", date: "Sat Oct 24 10:30 PM" },
+                { name: "LSU Tigers", abbrev: "LSU", sport: "NCAAF", date: "Sat Oct 24 7:45 PM" },
+                { name: "Penn State Nittany Lions", abbrev: "PSU", sport: "NCAAF", date: "Sat Oct 24 12:00 PM" },
+                { name: "Notre Dame Fighting Irish", abbrev: "ND", sport: "NCAAF", date: "Sat Oct 24 2:30 PM" }
+            ];
+
+            try {
+                const nflRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard').catch(() => null);
+                const ncfRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard').catch(() => null);
+
+                let fetchedTeams = [];
+
+                if (nflRes && nflRes.ok) {
+                    const data = await nflRes.json();
+                    if (data && data.events) {
+                        data.events.forEach(ev => {
+                            const comp = ev.competitions[0];
+                            const dStr = new Date(comp.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                            comp.competitors.forEach(c => {
+                                fetchedTeams.push({ name: c.team.displayName, abbrev: c.team.abbreviation, sport: 'NFL', date: dStr });
+                            });
+                        });
+                    }
+                }
+
+                if (ncfRes && ncfRes.ok) {
+                    const data = await ncfRes.json();
+                    if (data && data.events) {
+                        data.events.forEach(ev => {
+                            const comp = ev.competitions[0];
+                            const dStr = new Date(comp.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                            comp.competitors.forEach(c => {
+                                fetchedTeams.push({ name: c.team.displayName, abbrev: c.team.abbreviation, sport: 'NCAAF', date: dStr });
+                            });
+                        });
+                    }
+                }
+
+                if (fetchedTeams.length < 10) {
+                    currentWeekTeams = fallbackTeams;
+                } else {
+                    const now = new Date();
+                    const weekNum = Math.floor(now.getTime() / (7 * 86400000));
+                    let shuffled = [...fetchedTeams];
+                    for (let i = shuffled.length - 1; i > 0; i--) {
+                        let j = Math.floor(Math.abs(Math.sin(weekNum + i)) * (i + 1));
+                        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                    }
+                    const nflPool = shuffled.filter(t => t.sport === 'NFL').slice(0, 10);
+                    const ncfPool = shuffled.filter(t => t.sport === 'NCAAF').slice(0, 10);
+                    currentWeekTeams = [...nflPool, ...ncfPool];
+                    if (currentWeekTeams.length === 0) currentWeekTeams = fallbackTeams;
+                }
+            } catch (err) {
+                currentWeekTeams = fallbackTeams;
+            }
+
+            renderSpinnerTrack();
+        }
+
+        function renderSpinnerTrack() {
+            const track = document.getElementById('spinner-track');
+            let html = '';
+            currentWeekTeams.forEach(t => {
+                html += `<div class="spinner-item">${t.sport}: ${t.name}</div>`;
+            });
+            currentWeekTeams.slice(0, 5).forEach(t => {
+                html += `<div class="spinner-item">${t.sport}: ${t.name}</div>`;
+            });
+            track.innerHTML = html;
+        }
+
+        function startSpin() {
+            if (currentWeekTeams.length === 0) return;
+            const btn = document.getElementById('spin-btn');
+            btn.disabled = true;
+
+            const track = document.getElementById('spinner-track');
+            const winningIndex = Math.floor(Math.random() * currentWeekTeams.length);
+            const itemHeight = 120;
+            const targetOffset = -(winningIndex * itemHeight);
+
+            track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.35, 1)';
+            track.style.transform = `translateY(${targetOffset}px)`;
+
+            setTimeout(() => {
+                currentSpinTeam = currentWeekTeams[winningIndex];
+                btn.disabled = false;
+                showToast(`Landed on ${currentSpinTeam.name}! Choose an empty roster position.`);
+                highlightEmptyPositions();
+            }, 4100);
+        }
+
+        function highlightEmptyPositions() {
+            const roster = currentLeague.rosters[currentUser.name] || {};
+            POSITIONS.forEach(pos => {
+                const el = document.getElementById(`field-pos-${pos}`);
+                if (!roster[pos]) {
+                    el.classList.add('animate-bounce-slow');
+                }
             });
         }
-        return results;
-    }
 
-    function selectPlayer(name, pos) {
-        if (!currentLeague.rosters[currentUser.name]) {
-            currentLeague.rosters[currentUser.name] = {};
-        }
-
-        currentLeague.rosters[currentUser.name][activeTargetSlot] = {
-            name: name,
-            pos: pos,
-            team: currentSpinTeam.name,
-            gameDate: currentSpinTeam.date,
-            score: 0.0
-        };
-
-        saveLeaguesStorage();
-        closePlayerModal();
-        updateFieldUI();
-        showToast(`Drafted ${name} into ${activeTargetSlot}!`);
-        currentSpinTeam = null;
-
-        const filledCount = Object.keys(currentLeague.rosters[currentUser.name]).length;
-        if (filledCount >= 9) {
-            setTimeout(() => switchTab('team'), 500);
-        }
-    }
-
-    function updateFieldUI() {
-        const roster = currentLeague.rosters[currentUser.name] || {};
-        let filled = 0;
-
-        POSITIONS.forEach(pos => {
-            const el = document.getElementById(`field-pos-${pos}`);
-            el.classList.remove('animate-bounce-slow');
-            if (roster[pos]) {
-                filled++;
-                el.classList.add('filled');
-                el.innerHTML = `<span class="text-[9px] text-emerald-400">${pos}</span><span class="text-[10px] font-black truncate max-w-[50px]">${roster[pos].name.split(' ').pop()}</span>`;
-            } else {
-                el.classList.remove('filled');
-                el.innerHTML = pos;
+        async function openPlayerModal(pos) {
+            activeTargetSlot = pos;
+            if (!currentSpinTeam) {
+                showToast("You must spin the wheel first to select a team!");
+                return;
             }
-        });
 
-        document.getElementById('slots-filled').innerText = filled;
-    }
+            const modal = document.getElementById('player-modal');
+            const listEl = document.getElementById('players-list');
+            const loader = document.getElementById('players-loading');
+            const titleEl = document.getElementById('modal-title');
 
-    // MY TEAM TAB
-    function renderMyTeam() {
-        const roster = currentLeague.rosters[currentUser.name] || {};
-        const listEl = document.getElementById('roster-list');
-        let html = '';
+            titleEl.innerText = `Draft ${pos} from ${currentSpinTeam.name} (${currentSpinTeam.date})`;
+            modal.classList.remove('hidden');
+            listEl.innerHTML = '';
+            loader.classList.remove('hidden');
 
-        POSITIONS.forEach(pos => {
-            const p = roster[pos];
-            html += `
-                <div class="grid grid-cols-12 gap-4 p-3 items-center text-sm">
-                    <div class="col-span-2 text-center font-bold text-emerald-400 bg-slate-800/80 py-1 rounded border border-slate-700">${pos}</div>
-                    <div class="col-span-5">
-                        ${p ? `<div class="font-bold text-white">${p.name}</div><div class="text-[10px] text-slate-400">${p.team} •${p.gameDate}</div>` : `<div class="text-slate-500 italic">Empty Slot</div>`}
-                    </div>
-                    <div class="col-span-3 text-center font-black text-white">${p ? p.score.toFixed(1) : '-'}</div>
-                    <div class="col-span-2 text-center">
-                        ${p ? `<button onclick="respinSlot('${pos}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1 rounded transition-colors"><i class="fas fa-sync-alt mr-1"></i> Re-spin</button>` : ''}
-                    </div>
-                </div>
-            `;
-        });
-        listEl.innerHTML = html;
-        updateFieldUI();
-    }
+            setTimeout(() => {
+                loader.classList.add('hidden');
+                let players = generateSamplePlayers(currentSpinTeam, pos);
+                let html = '';
 
-    function respinSlot(pos) {
-        delete currentLeague.rosters[currentUser.name][pos];
-        saveLeaguesStorage();
-        switchTab('spin');
-        showToast(`Slot ${pos} cleared. Spin the wheel to draft a new player!`);
-    }
+                const userRoster = currentLeague.rosters[currentUser.name] || {};
+                const draftedNames = Object.values(userRoster).map(p => p.name);
 
-    function updateLiveScores() {
-        const roster = currentLeague.rosters[currentUser.name] || {};
-        let total = 0;
-        Object.keys(roster).forEach(pos => {
-            let pts = +(Math.random() * 24).toFixed(1);
-            roster[pos].score = pts;
-            total += pts;
-        });
-        saveLeaguesStorage();
-        renderMyTeam();
-        showToast("Live ESPN fantasy stats updated successfully!");
-    }
+                players.forEach(p => {
+                    const alreadyOnRoster = draftedNames.includes(p.name);
+                    html += `
+                        <div class="glass-panel p-3 rounded-xl flex justify-between items-center border border-slate-700/60 ${alreadyOnRoster ? 'opacity-50' : 'hover:border-emerald-500'} transition-all">
+                            <div>
+                                <h4 class="font-bold text-sm text-white">${p.name}</h4>
+                                <p class="text-[10px] text-slate-400">${p.pos} • Game: ${currentSpinTeam.date} ${alreadyOnRoster ? '<span class="text-amber-400 font-bold ml-1">(On Roster)</span>' : ''}</p>
+                            </div>
+                            <button ${alreadyOnRoster ? 'disabled' : `onclick="selectPlayer('${p.name}', '${p.pos}')"`} class="px-3 py-1.5 rounded-lg text-xs font-bold ${alreadyOnRoster ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'} transition-colors">
+                                ${alreadyOnRoster ? 'On Roster' : 'Draft'}
+                            </button>
+                        </div>
+                    `;
+                });
+                listEl.innerHTML = html;
+            }, 600);
+        }
 
-    // MATCHUP TAB WITH VICTORY & DEFEAT ANIMATIONS
-    function renderMatchup() {
-        const members = Object.keys(currentLeague.rosters || {});
-        const myName = currentUser.name;
-        const oppName = members.find(m => m !== myName) || "Bot Opponent (Bye Week)";
+        function closePlayerModal() {
+            document.getElementById('player-modal').classList.add('hidden');
+        }
 
-        document.getElementById('matchup-my-name').innerText = myName;
-        document.getElementById('matchup-opp-name').innerText = oppName;
+        function generateSamplePlayers(team, pos) {
+            const firstNames = ["Marcus", "Trevor", "Jordan", "Caleb", "Jalen", "Malik", "DeVonta", "Bijan", "Brock", "Tyreek", "Justin", "Amon-Ra", "Ja'Marr", "Davante", "Pat"];
+            const lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Wilson", "Anderson", "Taylor", "Thomas", "Moore", "Jackson", "Martin", "Lee"];
+            
+            let count = 4;
+            let results = [];
+            for (let i = 0; i < count; i++) {
+                let name = `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
+                results.push({
+                    name: name,
+                    pos: pos === 'FLEX' ? (Math.random() > 0.5 ? 'RB' : 'WR') : pos
+                });
+            }
+            return results;
+        }
 
-        const myRoster = currentLeague.rosters[myName] || {};
-        let myTotal = Object.values(myRoster).reduce((sum, p) => sum + (p.score || 0), 0);
-        document.getElementById('matchup-my-score').innerText = myTotal.toFixed(1);
+        function selectPlayer(name, pos) {
+            if (!currentLeague.rosters[currentUser.name]) {
+                currentLeague.rosters[currentUser.name] = {};
+            }
 
-        let oppTotal = oppName.includes('Bot') ? 85.5 : 92.4;
-        document.getElementById('matchup-opp-score').innerText = oppTotal.toFixed(1);
+            currentLeague.rosters[currentUser.name][activeTargetSlot] = {
+                name: name,
+                pos: pos,
+                team: currentSpinTeam.name,
+                gameDate: currentSpinTeam.date,
+                score: 0.0
+            };
 
-        let myRosterHtml = `<div class="font-bold text-slate-400 mb-1">${myName}'s Lineup</div>`;
-        POSITIONS.forEach(pos => {
-            const p = myRoster[pos];
-            myRosterHtml += `<div class="flex justify-between text-slate-300 py-0.5 border-b border-slate-800"><span>${pos}: ${p ? p.name : 'Empty'}</span><span class="font-bold">${p ? p.score.toFixed(1) : '0.0'}</span></div>`;
-        });
-        document.getElementById('matchup-my-roster').innerHTML = myRosterHtml;
+            saveLeaguesStorage();
+            closePlayerModal();
+            updateFieldUI();
+            showToast(`Drafted ${name} into ${activeTargetSlot}!`);
+            currentSpinTeam = null;
 
-        let oppRosterHtml = `<div class="font-bold text-slate-400 mb-1">${oppName}'s Lineup</div>`;
-        POSITIONS.forEach(pos => {
-            oppRosterHtml += `<div class="flex justify-between text-slate-300 py-0.5 border-b border-slate-800"><span>${pos}: Player</span><span class="font-bold">10.2</span></div>`;
-        });
-        document.getElementById('matchup-opp-roster').innerHTML = oppRosterHtml;
-
-        const banner = document.getElementById('matchup-banner');
-        if (myTotal > 0 || oppTotal > 0) {
-            banner.classList.remove('hidden');
-            if (myTotal >= oppTotal) {
-                banner.className = "w-full text-center py-3 px-4 rounded-xl font-black text-lg uppercase tracking-wider shadow-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
-                banner.innerHTML = `<i class="fas fa-trophy mr-2 text-yellow-400 animate-bounce"></i> VICTORY! CHAMPION OF THE WEEK! <i class="fas fa-beer ml-2 text-yellow-400"></i>`;
-                triggerBeerShower();
-            } else {
-                banner.className = "w-full text-center py-4 px-4 rounded-xl font-black text-2xl uppercase tracking-wider shadow-lg bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center gap-3 animate-pulse";
-                banner.innerHTML = `<i class="fas fa-hand-middle-finger text-3xl"></i> LOSER!`;
+            const filledCount = Object.keys(currentLeague.rosters[currentUser.name]).length;
+            if (filledCount >= 9) {
+                setTimeout(() => switchTab('team'), 500);
             }
         }
-    }
 
-    function triggerBeerShower() {
-        if (document.querySelectorAll('.beer-particle').length > 0) return;
-        for (let i = 0; i < 25; i++) {
-            const p = document.createElement('div');
-            p.className = 'beer-particle';
-            p.innerHTML = Math.random() > 0.5 ? '🍺' : '🏆';
-            p.style.left = `${Math.random() * 100}vw`;
-            p.style.animationDuration = `${2 + Math.random() * 2}s`;
-            p.style.animationDelay = `${Math.random() * 2}s`;
-            document.body.appendChild(p);
-            setTimeout(() => p.remove(), 4000);
+        function updateFieldUI() {
+            const roster = currentLeague.rosters[currentUser.name] || {};
+            let filled = 0;
+
+            POSITIONS.forEach(pos => {
+                const el = document.getElementById(`field-pos-${pos}`);
+                el.classList.remove('animate-bounce-slow');
+                if (roster[pos]) {
+                    filled++;
+                    el.classList.add('filled');
+                    el.innerHTML = `<span class="text-[9px] text-emerald-400">${pos}</span><span class="text-[10px] font-black truncate max-w-[50px]">${roster[pos].name.split(' ').pop()}</span>`;
+                } else {
+                    el.classList.remove('filled');
+                    el.innerHTML = pos;
+                }
+            });
+
+            document.getElementById('slots-filled').innerText = filled;
         }
-    }
 
-    // STANDINGS TAB
-    function renderStandings() {
-        const standings = currentLeague.standings || {};
-        const tbody = document.getElementById('standings-body');
-        let html = '';
-        let sorted = Object.keys(standings).sort((a,b) => standings[b].wins - standings[a].wins);
+        function renderMyTeam() {
+            const roster = currentLeague.rosters[currentUser.name] || {};
+            const listEl = document.getElementById('roster-list');
+            let html = '';
 
-        sorted.forEach((mgr, idx) => {
-            const s = standings[mgr];
-            html += `
-                <tr class="hover:bg-slate-800/40 transition-colors">
-                    <td class="p-4 font-black text-emerald-400">#${idx + 1}</td>
-                    <td class="p-4 font-bold text-white">${mgr} ${mgr === currentUser.name ? '<span class="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded ml-2">You</span>' : ''}</td>
-                    <td class="p-4 text-center font-mono">${s.wins}-${s.losses}-${s.ties}</td>
-                    <td class="p-4 text-right font-black text-emerald-400">${s.pts.toFixed(1)}</td>
-                </tr>
-            `;
-        });
-        tbody.innerHTML = html;
-    }
-</script>
+            POSITIONS.forEach(pos => {
+                const p = roster[pos];
+                html += `
+                    <div class="grid grid-cols-12 gap-4 p-3 items-center text-sm">
+                        <div class="col-span-2 text-center font-bold text-emerald-400 bg-slate-800/80 py-1 rounded border border-slate-700">${pos}</div>
+                        <div class="col-span-5">
+                            ${p ? `<div class="font-bold text-white">${p.name}</div><div class="text-[10px] text-slate-400">${p.team} • ${p.gameDate}</div>` : `<div class="text-slate-500 italic">Empty Slot</div>`}
+                        </div>
+                        <div class="col-span-3 text-center font-black text-white">${p ? p.score.toFixed(1) : '-'}</div>
+                        <div class="col-span-2 text-center">
+                            ${p ? `<button onclick="respinSlot('${pos}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-1 rounded transition-colors"><i class="fas fa-sync-alt mr-1"></i> Re-spin</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            listEl.innerHTML = html;
+            updateFieldUI();
+        }
+
+        function respinSlot(pos) {
+            delete currentLeague.rosters[currentUser.name][pos];
+            saveLeaguesStorage();
+            switchTab('spin');
+            showToast(`Slot ${pos} cleared. Spin the wheel to draft a new player!`);
+        }
+
+        function updateLiveScores() {
+            const roster = currentLeague.rosters[currentUser.name] || {};
+            let total = 0;
+            Object.keys(roster).forEach(pos => {
+                let pts = +(Math.random() * 24).toFixed(1);
+                roster[pos].score = pts;
+                total += pts;
+            });
+            saveLeaguesStorage();
+            renderMyTeam();
+            showToast("Live ESPN fantasy stats updated successfully!");
+        }
+
+        function renderMatchup() {
+            const members = Object.keys(currentLeague.rosters || {});
+            const myName = currentUser.name;
+            const oppName = members.find(m => m !== myName) || "Bot Opponent (Bye Week)";
+
+            document.getElementById('matchup-my-name').innerText = myName;
+            document.getElementById('matchup-opp-name').innerText = oppName;
+
+            const myRoster = currentLeague.rosters[myName] || {};
+            let myTotal = Object.values(myRoster).reduce((sum, p) => sum + (p.score || 0), 0);
+            document.getElementById('matchup-my-score').innerText = myTotal.toFixed(1);
+
+            let oppTotal = oppName.includes('Bot') ? 85.5 : 92.4;
+            document.getElementById('matchup-opp-score').innerText = oppTotal.toFixed(1);
+
+            let myRosterHtml = `<div class="font-bold text-slate-400 mb-1">${myName}'s Lineup</div>`;
+            POSITIONS.forEach(pos => {
+                const p = myRoster[pos];
+                myRosterHtml += `<div class="flex justify-between text-slate-300 py-0.5 border-b border-slate-800"><span>${pos}: ${p ? p.name : 'Empty'}</span><span class="font-bold">${p ? p.score.toFixed(1) : '0.0'}</span></div>`;
+            });
+            document.getElementById('matchup-my-roster').innerHTML = myRosterHtml;
+
+            let oppRosterHtml = `<div class="font-bold text-slate-400 mb-1">${oppName}'s Lineup</div>`;
+            POSITIONS.forEach(pos => {
+                oppRosterHtml += `<div class="flex justify-between text-slate-300 py-0.5 border-b border-slate-800"><span>${pos}: Player</span><span class="font-bold">10.2</span></div>`;
+            });
+            document.getElementById('matchup-opp-roster').innerHTML = oppRosterHtml;
+
+            const banner = document.getElementById('matchup-banner');
+            if (myTotal > 0 || oppTotal > 0) {
+                banner.classList.remove('hidden');
+                if (myTotal >= oppTotal) {
+                    banner.className = "w-full text-center py-3 px-4 rounded-xl font-black text-lg uppercase tracking-wider shadow-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
+                    banner.innerHTML = `<i class="fas fa-trophy mr-2 text-yellow-400 animate-bounce"></i> VICTORY! CHAMPION OF THE WEEK! <i class="fas fa-beer ml-2 text-yellow-400"></i>`;
+                    triggerBeerShower();
+                } else {
+                    banner.className = "w-full text-center py-4 px-4 rounded-xl font-black text-2xl uppercase tracking-wider shadow-lg bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center gap-3 animate-pulse";
+                    banner.innerHTML = `<i class="fas fa-hand-middle-finger text-3xl"></i> LOSER!`;
+                }
+            }
+        }
+
+        function triggerBeerShower() {
+            if (document.querySelectorAll('.beer-particle').length > 0) return;
+            for (let i = 0; i < 25; i++) {
+                const p = document.createElement('div');
+                p.className = 'beer-particle';
+                p.innerHTML = Math.random() > 0.5 ? '🍺' : '🏆';
+                p.style.left = `${Math.random() * 100}vw`;
+                p.style.animationDuration = `${2 + Math.random() * 2}s`;
+                p.style.animationDelay = `${Math.random() * 2}s`;
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 4000);
+            }
+        }
+
+        function renderStandings() {
+            const standings = currentLeague.standings || {};
+            const tbody = document.getElementById('standings-body');
+            let html = '';
+            let sorted = Object.keys(standings).sort((a,b) => standings[b].wins - standings[a].wins);
+
+            sorted.forEach((mgr, idx) => {
+                const s = standings[mgr];
+                html += `
+                    <tr class="hover:bg-slate-800/40 transition-colors">
+                        <td class="p-4 font-black text-emerald-400">#${idx + 1}</td>
+                        <td class="p-4 font-bold text-white">${mgr} ${mgr === currentUser.name ? '<span class="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded ml-2">You</span>' : ''}</td>
+                        <td class="p-4 text-center font-mono">${s.wins}-${s.losses}-${s.ties}</td>
+                        <td class="p-4 text-right font-black text-emerald-400">${s.pts.toFixed(1)}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
