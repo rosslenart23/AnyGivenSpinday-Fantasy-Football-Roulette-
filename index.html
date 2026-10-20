@@ -91,7 +91,7 @@
     <div id="auth-loading" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900">
         <i class="fas fa-football-ball text-5xl text-emerald-500 animate-bounce mb-4"></i>
         <h2 class="text-2xl font-bold tracking-tight">AnyGivenSpinday</h2>
-        <p class="text-slate-400 mt-2">Connecting to league servers...</p>
+        <p class="text-slate-400 mt-2">Connecting to shared league session...</p>
     </div>
 
     <header class="glass-panel sticky top-0 z-40 px-4 py-3 flex justify-between items-center hidden" id="main-header">
@@ -115,7 +115,7 @@
                 <div class="glass-panel rounded-2xl p-6 shadow-2xl h-fit">
                     <i class="fas fa-trophy text-4xl text-emerald-500 mb-4 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]"></i>
                     <h1 class="text-2xl font-black mb-2">New League</h1>
-                    <p class="text-slate-400 mb-6 text-xs">Create a new AnyGivenSpinday league or join your friends.</p>
+                    <p class="text-slate-400 mb-6 text-xs">Create a new AnyGivenSpinday league or join with a league ID.</p>
                     
                     <div class="mb-4 text-left">
                         <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Your Manager Name</label>
@@ -185,15 +185,14 @@
             </div>
 
             <div class="flex-1 relative">
-                <!-- SPIN DRAFT TAB -->
                 <div id="tab-content-spin" class="absolute inset-0 flex flex-col">
                     <div class="glass-panel rounded-xl p-6 flex flex-col items-center justify-center flex-1 text-center">
                         <h3 class="text-2xl font-black mb-2">Weekly Spin Draft</h3>
-                        <p class="text-slate-400 text-sm mb-8 max-w-md">The draft pool features live unplayed NFL and NCAA teams. Spin the wheel to land on a team, then scout and select your roster.</p>
+                        <p class="text-slate-400 text-sm mb-8 max-w-md">The draft pool features 10 live NFL and 10 NCAA teams for this week (locked if games have started). Spin the wheel to land on a team, then select your roster.</p>
                         
                         <div class="bg-slate-900 rounded-xl p-6 border border-slate-700 w-full max-w-md mb-8 relative shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                             <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-slate-900 text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-widest z-10">
-                                Live ESPN Pool
+                                Live ESPN Pool (20 Weekly Teams)
                             </div>
                             
                             <div class="spinner-container mb-6" id="spinner-container">
@@ -238,7 +237,6 @@
                     </div>
                 </div>
 
-                <!-- MY TEAM TAB -->
                 <div id="tab-content-team" class="absolute inset-0 flex flex-col hidden overflow-y-auto pb-10">
                     <div class="flex justify-between items-end mb-4">
                         <h3 class="text-2xl font-black">My Roster</h3>
@@ -261,7 +259,6 @@
                     </div>
                 </div>
 
-                <!-- MATCHUP TAB -->
                 <div id="tab-content-matchup" class="absolute inset-0 flex flex-col hidden overflow-y-auto pb-10">
                     <h3 class="text-2xl font-black mb-6">Weekly Matchup</h3>
                     <div class="glass-panel rounded-xl p-4 flex flex-col items-center justify-between gap-4 mb-6">
@@ -284,7 +281,6 @@
                     </div>
                 </div>
 
-                <!-- STANDINGS TAB -->
                 <div id="tab-content-standings" class="absolute inset-0 flex flex-col hidden overflow-y-auto">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-2xl font-black">League Standings</h3>
@@ -330,16 +326,11 @@
 
     <div id="toast-container"></div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <script>
+        const STORAGE_KEY = 'any_given_spinday_local_data_v3';
+        let localData = { leagues: {}, rosters: {}, currentUser: { uid: 'user_' + Math.random().toString(36).substring(2, 8), name: 'Manager' } };
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'any-given-spinday';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-
-        let app, auth, db;
-        let currentUser = null;
+        let currentUser = localData.currentUser;
         let currentLeagueId = null;
         let currentLeagueData = null;
         let userRoster = { QB: null, RB1: null, RB2: null, WR1: null, WR2: null, TE: null, FLEX: null, "D/ST": null, K: null, score: 0 };
@@ -351,26 +342,33 @@
 
         const POSITIONS = ["QB", "RB1", "RB2", "WR1", "WR2", "TE", "FLEX", "D/ST", "K"];
 
-        async function init() {
+        function loadLocalStorage() {
             try {
-                if(Object.keys(firebaseConfig).length > 0) {
-                    app = initializeApp(firebaseConfig);
-                    auth = getAuth(app);
-                    db = getFirestore(app);
-                    const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                    if (token) { await signInWithCustomToken(auth, token); } else { await signInAnonymously(auth); }
-                    currentUser = auth.currentUser;
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    localData = JSON.parse(saved);
+                    currentUser = localData.currentUser;
+                } else {
+                    saveLocalStorage();
                 }
-                document.getElementById('auth-loading').classList.add('hidden');
-                document.getElementById('main-header').classList.remove('hidden');
-                document.getElementById('app-container').classList.remove('hidden');
-                
-                await loadUserLeagues();
-                navigate('lobby');
-            } catch (error) {
-                console.error("Initialization error:", error);
-                showToast("Failed to connect to servers.", "error");
-            }
+            } catch(e) {}
+        }
+
+        function saveLocalStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(localData));
+            } catch(e) {}
+        }
+
+        async function init() {
+            loadLocalStorage();
+            document.getElementById('auth-loading').classList.add('hidden');
+            document.getElementById('main-header').classList.remove('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('player-name').value = currentUser.name || "Manager";
+            
+            await loadUserLeagues();
+            navigate('lobby');
         }
 
         window.navigate = (viewId) => {
@@ -411,39 +409,27 @@
         window.closeModal = (id) => { document.getElementById(id).classList.add('hidden'); };
 
         async function loadUserLeagues() {
-            if (!currentUser || !db) return;
-            try {
-                const leaguesCol = collection(db, 'artifacts', appId, 'public', 'data', 'leagues');
-                const snapshot = await getDocs(leaguesCol);
-                userLeaguesData = {};
-                
-                for (const docSnap of snapshot.docs) {
-                    const lData = docSnap.data();
-                    if (lData.managers && lData.managers[currentUser.uid]) {
-                        const lId = docSnap.id;
-                        let filledCount = 0;
-                        try {
-                            const rosterRef = doc(db, 'artifacts', appId, 'public', 'data', `rosters_${lId}`, currentUser.uid);
-                            const rSnap = await getDoc(rosterRef);
-                            if (rSnap.exists()) {
-                                const ros = rSnap.data().roster || {};
-                                filledCount = Object.values(ros).filter(v => v !== null).length;
-                            }
-                        } catch (err) {
-                            console.warn("Could not fetch roster for league:", lId);
-                        }
-                        userLeaguesData[lId] = {
-                            name: lId,
-                            managerName: lData.managers[currentUser.uid].name,
-                            filledCount: filledCount,
-                            totalSlots: 9
-                        };
+            localData.leagues = localData.leagues || {};
+            localData.rosters = localData.rosters || {};
+            userLeaguesData = {};
+            
+            for (const lId in localData.leagues) {
+                const lData = localData.leagues[lId];
+                if (lData.managers && lData.managers[currentUser.uid]) {
+                    let filledCount = 0;
+                    const rosObj = localData.rosters[lId] && localData.rosters[lId][currentUser.uid] ? localData.rosters[lId][currentUser.uid].roster : null;
+                    if (rosObj) {
+                        filledCount = Object.values(rosObj).filter(v => v !== null).length;
                     }
+                    userLeaguesData[lId] = {
+                        name: lId,
+                        managerName: lData.managers[currentUser.uid].name,
+                        filledCount: filledCount,
+                        totalSlots: 9
+                    };
                 }
-                renderLeaguesHub(userLeaguesData);
-            } catch (e) {
-                console.error("Error loading user leagues:", e);
             }
+            renderLeaguesHub(userLeaguesData);
         }
 
         function renderLeaguesHub(leagues) {
@@ -496,63 +482,55 @@
         };
 
         window.createLeague = async () => {
-            if (!currentUser) return;
             const name = document.getElementById('player-name').value.trim() || "Manager";
+            currentUser.name = name;
+            localData.currentUser = currentUser;
             const newLeagueId = Math.random().toString(36).substring(2, 8).toUpperCase();
             
-            showToast("Fetching LIVE ESPN Draft Pool...");
+            showToast("Fetching weekly ESPN Draft Pool...");
             const teams = await fetchWeeklyTeamsFromAPI();
             if(!teams || teams.length === 0) return showToast("No active unplayed games found in ESPN pool", "error");
 
-            try {
-                const leagueRef = doc(db, 'artifacts', appId, 'public', 'data', 'leagues', newLeagueId);
-                await setDoc(leagueRef, {
-                    created_at: new Date().toISOString(),
-                    weekly_pool: teams,
-                    managers: { [currentUser.uid]: { name: name, w: 0, l: 0, t: 0, pts: 0 } }
-                });
-                await initRoster(newLeagueId, name);
-                joinLeagueLogic(newLeagueId, name);
-            } catch (err) {
-                console.error(err);
-                showToast("Error creating league", "error");
-            }
+            localData.leagues = localData.leagues || {};
+            localData.leagues[newLeagueId] = {
+                created_at: new Date().toISOString(),
+                weekly_pool: teams,
+                managers: { [currentUser.uid]: { name: name, w: 0, l: 0, t: 0, pts: 0 } }
+            };
+            
+            initRoster(newLeagueId, name);
+            saveLocalStorage();
+            joinLeagueLogic(newLeagueId, name);
         };
 
         window.joinLeague = async () => {
-            if (!currentUser) return;
             const code = document.getElementById('join-code').value.trim().toUpperCase();
             const name = document.getElementById('player-name').value.trim() || "Manager";
+            currentUser.name = name;
+            localData.currentUser = currentUser;
             if(!code) return showToast("Enter a League ID", "error");
 
-            try {
-                const leagueRef = doc(db, 'artifacts', appId, 'public', 'data', 'leagues', code);
-                const snap = await getDoc(leagueRef);
-                if(snap.exists()) {
-                    const data = snap.data();
-                    data.managers[currentUser.uid] = data.managers[currentUser.uid] || { name: name, w: 0, l: 0, t: 0, pts: 0 };
-                    await updateDoc(leagueRef, { managers: data.managers });
-                    await initRoster(code, name);
-                    joinLeagueLogic(code, name);
-                } else {
-                    showToast("League not found", "error");
-                }
-            } catch (err) {
-                console.error(err);
-                showToast("Error joining league", "error");
+            localData.leagues = localData.leagues || {};
+            if(localData.leagues[code]) {
+                localData.leagues[code].managers[currentUser.uid] = localData.leagues[code].managers[currentUser.uid] || { name: name, w: 0, l: 0, t: 0, pts: 0 };
+                initRoster(code, name);
+                saveLocalStorage();
+                joinLeagueLogic(code, name);
+            } else {
+                showToast("League not found in local session", "error");
             }
         };
 
-        async function initRoster(leagueId, name) {
-            const rosterRef = doc(db, 'artifacts', appId, 'public', 'data', `rosters_${leagueId}`, currentUser.uid);
-            const snap = await getDoc(rosterRef);
-            if(!snap.exists()) {
-                await setDoc(rosterRef, {
+        function initRoster(leagueId, name) {
+            localData.rosters = localData.rosters || {};
+            localData.rosters[leagueId] = localData.rosters[leagueId] || {};
+            if(!localData.rosters[leagueId][currentUser.uid]) {
+                localData.rosters[leagueId][currentUser.uid] = {
                     managerName: name,
                     roster: { QB: null, RB1: null, RB2: null, WR1: null, WR2: null, TE: null, FLEX: null, "D/ST": null, K: null },
                     score: 0,
                     reSpins: 3
-                });
+                };
             }
         }
 
@@ -561,31 +539,17 @@
             document.getElementById('league-id-display').innerText = code;
             document.getElementById('user-display').innerText = name;
             
-            const leagueRef = doc(db, 'artifacts', appId, 'public', 'data', 'leagues', code);
-            onSnapshot(leagueRef, (doc) => {
-                if(doc.exists()) {
-                    currentLeagueData = doc.data();
-                    weeklyTeamsPool = currentLeagueData.weekly_pool || [];
-                    updateStandings();
-                }
-            });
+            currentLeagueData = localData.leagues[code];
+            weeklyTeamsPool = currentLeagueData.weekly_pool || [];
+            updateStandings();
 
-            const rostersCol = collection(db, 'artifacts', appId, 'public', 'data', `rosters_${code}`);
-            onSnapshot(rostersCol, (snapshot) => {
-                allLeagueRosters = {};
-                snapshot.forEach(doc => {
-                    allLeagueRosters[doc.id] = doc.data();
-                    if(doc.id === currentUser.uid) {
-                        userRoster = doc.data().roster || {};
-                        userReSpins = doc.data().reSpins !== undefined ? doc.data().reSpins : 3;
-                        const rc = document.getElementById('respin-count');
-                        if (rc) rc.innerText = userReSpins;
-                        updateRosterProgress();
-                        if(document.getElementById(`tab-team`).classList.contains('tab-active')) renderRoster();
-                    }
-                });
-                if(document.getElementById(`tab-matchup`).classList.contains('tab-active')) renderMatchup();
-            });
+            allLeagueRosters = localData.rosters[code] || {};
+            userRoster = allLeagueRosters[currentUser.uid] ? allLeagueRosters[currentUser.uid].roster : { QB: null, RB1: null, RB2: null, WR1: null, WR2: null, TE: null, FLEX: null, "D/ST": null, K: null };
+            userReSpins = allLeagueRosters[currentUser.uid] && allLeagueRosters[currentUser.uid].reSpins !== undefined ? allLeagueRosters[currentUser.uid].reSpins : 3;
+            
+            const rc = document.getElementById('respin-count');
+            if (rc) rc.innerText = userReSpins;
+            updateRosterProgress();
 
             navigate('league');
             switchTab('spin');
@@ -600,13 +564,15 @@
                 
                 const nflData = await nflRes.json();
                 const cfbData = await cfbRes.json();
-                let teams = [];
                 
-                const processEvents = (events, leagueType) => {
+                let nflTeams = [];
+                let cfbTeams = [];
+                
+                const processEvents = (events, leagueType, targetList) => {
                     events.forEach(ev => {
                         if (!ev.competitions || ev.competitions.length === 0) return;
                         const gameState = ev.status?.type?.state || ev.competitions[0].status?.type?.state || 'pre';
-                        if (gameState === 'in' || gameState === 'post') return;
+                        if (gameState === 'in' || gameState === 'post') return; // Strict lockout rule
 
                         const comp = ev.competitions[0];
                         if (!comp.competitors || comp.competitors.length < 2) return;
@@ -619,16 +585,35 @@
                         const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                         const gameTime = `${days[dateObj.getDay()]} ${months[dateObj.getMonth()]} ${dateObj.getDate()} ${dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
 
-                        teams.push({ id: t1.team.id, name: t1.team.displayName, logoUrl: t1.team.logo, opponent: t2.team.displayName, isHome: t1.homeAway === 'home', type: leagueType, eventId: ev.id, gameTime });
-                        teams.push({ id: t2.team.id, name: t2.team.displayName, logoUrl: t2.team.logo, opponent: t1.team.displayName, isHome: t2.homeAway === 'home', type: leagueType, eventId: ev.id, gameTime });
+                        targetList.push({ id: t1.team.id, name: t1.team.displayName, logoUrl: t1.team.logo, opponent: t2.team.displayName, isHome: t1.homeAway === 'home', type: leagueType, eventId: ev.id, gameTime, rawDate: ev.date });
+                        targetList.push({ id: t2.team.id, name: t2.team.displayName, logoUrl: t2.team.logo, opponent: t1.team.displayName, isHome: t2.homeAway === 'home', type: leagueType, eventId: ev.id, gameTime, rawDate: ev.date });
                     });
                 };
                 
-                processEvents(nflData.events || [], 'nfl');
-                processEvents(cfbData.events || [], 'college-football');
-                return teams;
+                processEvents(nflData.events || [], 'nfl', nflTeams);
+                processEvents(cfbData.events || [], 'college-football', cfbTeams);
+
+                // Weekly seeded shuffle so all leagues share the exact same 20-team pool for the current week
+                const now = new Date();
+                const weekNumber = Math.ceil((((now - new Date(now.getFullYear(), 0, 1)) / 86400000) + new Date(now.getFullYear(), 0, 1).getDay() + 1) / 7);
+                const year = now.getFullYear();
+                const weeklySeed = year * 100 + weekNumber;
+
+                const seededShuffle = (array, seed) => {
+                    let m = array.length, t, i;
+                    while (m) {
+                        i = Math.floor(Math.sin(seed++) * 10000) % m;
+                        m--;
+                        t = array[m]; array[m] = array[i]; array[i] = t;
+                    }
+                    return array;
+                };
+
+                seededShuffle(nflTeams, weeklySeed);
+                seededShuffle(cfbTeams, weeklySeed + 1);
+
+                return [...nflTeams.slice(0, 10), ...cfbTeams.slice(0, 10)];
             } catch (e) {
-                console.error("ESPN API Fetch Error:", e);
                 return [];
             }
         }
@@ -677,14 +662,15 @@
 
         window.triggerReSpin = async (posStr) => {
             if(userReSpins <= 0) return showToast("No re-spins remaining!", "error");
-            const newRoster = {...userRoster};
-            newRoster[posStr] = null;
-            try {
-                const rosterRef = doc(db, 'artifacts', appId, 'public', 'data', `rosters_${currentLeagueId}`, currentUser.uid);
-                await updateDoc(rosterRef, { roster: newRoster, reSpins: userReSpins - 1 });
-                showToast(`Re-spin used. You have ${userReSpins - 1} left.`);
-                switchTab('spin');
-            } catch(e) { showToast("Error using re-spin.", "error"); }
+            userRoster[posStr] = null;
+            userReSpins -= 1;
+            
+            localData.rosters[currentLeagueId][currentUser.uid].roster = userRoster;
+            localData.rosters[currentLeagueId][currentUser.uid].reSpins = userReSpins;
+            saveLocalStorage();
+
+            showToast(`Re-spin used. You have ${userReSpins} left.`);
+            switchTab('spin');
         };
 
         window.updateLiveScores = async () => {
@@ -693,12 +679,6 @@
                 const eventsToFetch = new Map();
                 for (const pos in userRoster) {
                     if (userRoster[pos] && userRoster[pos].eventId) eventsToFetch.set(userRoster[pos].eventId, userRoster[pos].leagueType);
-                }
-                const aiData = allLeagueRosters['AI_OPPONENT'];
-                if (aiData && aiData.roster) {
-                    for (const pos in aiData.roster) {
-                        if (aiData.roster[pos] && aiData.roster[pos].eventId) eventsToFetch.set(aiData.roster[pos].eventId, aiData.roster[pos].leagueType);
-                    }
                 }
                 if (eventsToFetch.size === 0) return showToast("No drafted players to score!", "error");
 
@@ -744,19 +724,22 @@
                     return found ? parseFloat(score.toFixed(2)) : 'Pending';
                 };
 
-                const newRoster = {...userRoster};
                 let totalScore = 0;
-                for (const pos in newRoster) {
-                    if (newRoster[pos]) {
-                        const p = newRoster[pos];
+                for (const pos in userRoster) {
+                    if (userRoster[pos]) {
+                        const p = userRoster[pos];
                         const val = getPlayerScore(p.name, p.eventId, p.position);
-                        newRoster[pos].score = val;
+                        userRoster[pos].score = val;
                         if (typeof val === 'number') totalScore += val;
                     }
                 }
-                const rosterRef = doc(db, 'artifacts', appId, 'public', 'data', `rosters_${currentLeagueId}`, currentUser.uid);
-                await updateDoc(rosterRef, { roster: newRoster, score: parseFloat(totalScore).toFixed(2) });
+                
+                localData.rosters[currentLeagueId][currentUser.uid].roster = userRoster;
+                localData.rosters[currentLeagueId][currentUser.uid].score = parseFloat(totalScore).toFixed(2);
+                saveLocalStorage();
+
                 showToast("Live stats updated successfully!");
+                renderRoster();
             } catch (err) {
                 showToast("Failed to fetch live stats.", "error");
             }
@@ -829,9 +812,9 @@
             
             let html = '';
             players.forEach(p => {
-                const isDrafted = Object.values(userRoster).some(r => r && r.name === p.name);
+                const isAlreadyDrafted = Object.values(userRoster).some(r => r && r.name === p.name);
                 html += `
-                    <div class="flex justify-between items-center bg-slate-800 p-3 rounded-lg border border-slate-700 ${isDrafted ? 'opacity-50' : 'hover:border-emerald-500 cursor-pointer'} group" ${!isDrafted ? `onclick="draftSelectedPlayer('${p.name.replace(/'/g, "\\'")}', '${p.position}', '${teamObj.name.replace(/'/g, "\\'")}', '${p.injuryStatus || 'None'}', '${gameTime}', '${teamObj.eventId}', '${teamObj.type}')"` : ''}>
+                    <div class="flex justify-between items-center bg-slate-800 p-3 rounded-lg border border-slate-700 ${isAlreadyDrafted ? 'opacity-50' : 'hover:border-emerald-500 cursor-pointer'} group" ${!isAlreadyDrafted ? `onclick="draftSelectedPlayer('${p.name.replace(/'/g, "\\'")}', '${p.position}', '${teamObj.name.replace(/'/g, "\\'")}', '${p.injuryStatus || 'None'}', '${gameTime}', '${teamObj.eventId}', '${teamObj.type}')"` : ''}>
                         <div class="flex-1 overflow-hidden">
                             <p class="font-bold text-white group-hover:text-emerald-400 flex items-center"><span class="truncate">${p.name}</span> ${getInjuryBadge(p.injuryStatus)}</p>
                             <p class="text-xs text-slate-400">${p.position} • ${teamObj.name} • ${gameTime}</p>
@@ -841,7 +824,7 @@
                                 <p class="text-sm font-black text-emerald-400">${p.projectedPoints}</p>
                                 <p class="text-[9px] text-slate-500 uppercase">Proj Pts</p>
                             </div>
-                            <button class="bg-slate-700 group-hover:bg-emerald-600 text-white px-3 py-1 rounded text-xs font-bold">${isDrafted ? 'On Roster' : 'Select'}</button>
+                            <button class="bg-slate-700 group-hover:bg-emerald-600 text-white px-3 py-1 rounded text-xs font-bold">${isAlreadyDrafted ? 'On Roster' : 'Select'}</button>
                         </div>
                     </div>
                 `;
@@ -864,20 +847,18 @@
 
             if (!targetSlot) return showToast(`No available slot for a ${realPos}!`, "error");
             
-            const newRoster = {...userRoster};
-            newRoster[targetSlot] = { name, position: realPos, team, score: 'Pending', injuryStatus, gameTime, eventId, leagueType };
+            userRoster[targetSlot] = { name, position: realPos, team, score: 'Pending', injuryStatus, gameTime, eventId, leagueType };
             
-            try {
-                const rosterRef = doc(db, 'artifacts', appId, 'public', 'data', `rosters_${currentLeagueId}`, currentUser.uid);
-                await updateDoc(rosterRef, { roster: newRoster });
-                showToast(`Drafted ${name} to ${targetSlot}!`);
-                closeModal('modal-select-player');
-                
-                const filledCount = Object.values(newRoster).filter(v => v !== null).length;
-                if (filledCount >= 9) {
-                    setTimeout(() => switchTab('team'), 500);
-                }
-            } catch(e) { showToast("Failed to draft player", "error"); }
+            localData.rosters[currentLeagueId][currentUser.uid].roster = userRoster;
+            saveLocalStorage();
+
+            showToast(`Drafted ${name} to ${targetSlot}!`);
+            closeModal('modal-select-player');
+            
+            const filledCount = Object.values(userRoster).filter(v => v !== null).length;
+            if (filledCount >= 9) {
+                setTimeout(() => switchTab('team'), 500);
+            }
         };
 
         function updateRosterProgress() {
@@ -959,7 +940,7 @@
                     const formatPlayer = (p) => {
                         if (!p) return `<div class="py-2 text-slate-600 italic">Empty</div>`;
                         return `<div class="py-1.5 border-b border-slate-800 flex justify-between items-center">
-                            <div><span class="text-slate-500 font-bold text-[10px] uppercase">${pos}:</span> <span class="text-white font-bold">${p.name}</span></div>
+                            <div><span class="text-slate-500 font-bold text-[10px] uppercase">${pos}:</span> <span class="text-white font-bold">${p.name}</span> <span class="text-[9px] text-slate-400 block">${p.gameTime}</span></div>
                             <span class="text-emerald-400 font-bold">${p.score || 'Pending'}</span>
                         </div>`;
                     };
@@ -997,4 +978,3 @@
     </script>
 </body>
 </html>
-
