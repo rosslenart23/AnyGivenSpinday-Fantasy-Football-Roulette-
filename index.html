@@ -52,7 +52,7 @@
             text-transform: uppercase;
         }
         .spinner-shaking {
-            animation: violentShake 0.03s infinite alternate ease-in-out;
+            animation: violentShake 0.08s infinite alternate ease-in-out;
         }
         @keyframes violentShake {
             0% { transform: translate(-3px, 2px) rotate(-0.5deg); }
@@ -246,7 +246,7 @@
                             <span class="bg-slate-800 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-slate-700" id="week-display-badge">Week 7</span>
                             <h3 class="text-2xl font-black">Weekly Spin Draft</h3>
                         </div>
-                        <p class="text-slate-400 text-sm mb-8 max-w-md">20 entirely randomized teams (10 NFL from all 32 franchises + 10 NCAA from all conferences nationwide). Spin to build your lineup!</p>
+                        <p class="text-slate-400 text-sm mb-8 max-w-md">20 entirely randomized teams (10 NFL + 10 NCAA) with upcoming live matchups. Spin to draft players!</p>
                         
                         <div class="bg-slate-900 rounded-xl p-6 border border-slate-700 w-full max-w-md mb-8 relative shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                             <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-slate-900 text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-widest z-10">
@@ -344,9 +344,9 @@
 
                         <div id="matchup-banner" class="w-full hidden text-center py-3 px-4 rounded-xl font-black text-lg uppercase tracking-wider shadow-lg"></div>
 
-                        <div class="w-full bg-slate-900 rounded-lg p-3 border border-slate-700 flex flex-col md:flex-row text-xs mt-2 gap-3">
-                            <div id="matchup-my-roster" class="flex-1 md:border-r border-slate-700 md:pr-3 space-y-2"></div>
-                            <div id="matchup-opp-roster" class="flex-1 md:pl-3 space-y-2"></div>
+                        <div class="w-full bg-slate-900 rounded-lg p-3 border border-slate-700 flex flex-col md:flex-row text-xs mt-2 gap-4">
+                            <div id="matchup-my-roster" class="flex-1 md:border-r border-slate-800 md:pr-4 space-y-2"></div>
+                            <div id="matchup-opp-roster" class="flex-1 md:pl-2 space-y-2"></div>
                         </div>
                     </div>
                 </div>
@@ -394,21 +394,40 @@
         </div>
     </div>
 
-    <!-- PLAYER MODAL -->
-    <div id="player-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="glass-panel rounded-2xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl border border-slate-700 overflow-hidden">
-            <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/60">
+    <!-- PLAYER SELECTION MODAL -->
+    <div id="player-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-panel rounded-2xl w-full max-w-xl max-h-[88vh] flex flex-col shadow-2xl border border-slate-700 overflow-hidden">
+            <!-- Modal Header -->
+            <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/70">
                 <div class="flex items-center gap-3">
-                    <div id="modal-team-logo" class="w-10 h-10 rounded-lg bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center text-xl shadow-md overflow-hidden"><img id="modal-team-logo-img" class="w-8 h-8 object-contain hidden" alt="logo"></div>
+                    <div id="modal-team-logo" class="w-12 h-12 rounded-xl bg-slate-800/80 border border-slate-700 flex items-center justify-center text-xl shadow-md overflow-hidden p-1.5">
+                        <img id="modal-team-logo-img" class="w-full h-full object-contain hidden" alt="logo">
+                    </div>
                     <div>
-                        <h3 class="font-black text-base text-white" id="modal-title">Select Player</h3>
-                        <p class="text-xs text-slate-400" id="modal-subtitle">Live ESPN Roster</p>
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-black text-lg text-white tracking-wide" id="modal-title">Select Player</h3>
+                            <span id="modal-sport-tag" class="bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase px-2 py-0.5 rounded border border-emerald-500/30">NFL</span>
+                        </div>
+                        <p class="text-xs text-slate-400 font-medium" id="modal-subtitle">Live ESPN Roster</p>
                     </div>
                 </div>
                 <button onclick="closePlayerModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
+
+            <!-- Matchup Game Time Strip -->
+            <div id="modal-gametime-strip" class="bg-slate-950/90 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2 text-slate-300">
+                    <i class="fas fa-clock text-emerald-400 text-sm"></i>
+                    <span class="font-bold text-white" id="modal-game-datetime">Day, Date • Kickoff Time</span>
+                </div>
+                <div class="flex items-center gap-2 font-mono font-semibold text-emerald-400" id="modal-game-matchup">
+                    vs. Opponent
+                </div>
+            </div>
+
+            <!-- Player List -->
             <div class="p-4 flex-1 overflow-y-auto">
                 <div id="players-loading" class="flex flex-col items-center justify-center py-10 text-slate-400">
                     <div class="loader mb-3"></div>
@@ -434,10 +453,70 @@
         let leaguesData = JSON.parse(localStorage.getItem('any_given_spinday_leagues') || '{}');
         let pendingDeleteId = null;
 
-        let currentSeasonWeek = 7;
+        let activeSlateWeek = 7;
         let isMondayNightFootballFinal = false;
 
         const POSITIONS = ['QB', 'RB1', 'RB2', 'WR1', 'WR2', 'TE', 'FLEX', 'DST', 'K'];
+
+        // Verified Team Reference Directory mapping team names/codes to ESPN media CDN logos
+        const TEAM_REGISTRY = {
+            // NFL
+            "Arizona Cardinals": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png", sport: "nfl", id: "22" },
+            "Atlanta Falcons": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/atl.png", sport: "nfl", id: "1" },
+            "Baltimore Ravens": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/bal.png", sport: "nfl", id: "33" },
+            "Buffalo Bills": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png", sport: "nfl", id: "2" },
+            "Carolina Panthers": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/car.png", sport: "nfl", id: "29" },
+            "Chicago Bears": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png", sport: "nfl", id: "3" },
+            "Cincinnati Bengals": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/cin.png", sport: "nfl", id: "4" },
+            "Cleveland Browns": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/cle.png", sport: "nfl", id: "5" },
+            "Dallas Cowboys": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/dal.png", sport: "nfl", id: "6" },
+            "Denver Broncos": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/den.png", sport: "nfl", id: "7" },
+            "Detroit Lions": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/det.png", sport: "nfl", id: "8" },
+            "Green Bay Packers": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/gb.png", sport: "nfl", id: "9" },
+            "Houston Texans": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/hou.png", sport: "nfl", id: "34" },
+            "Indianapolis Colts": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ind.png", sport: "nfl", id: "11" },
+            "Jacksonville Jaguars": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/jax.png", sport: "nfl", id: "30" },
+            "Kansas City Chiefs": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png", sport: "nfl", id: "12" },
+            "Las Vegas Raiders": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/lv.png", sport: "nfl", id: "13" },
+            "Los Angeles Chargers": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/lac.png", sport: "nfl", id: "24" },
+            "Los Angeles Rams": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/lar.png", sport: "nfl", id: "14" },
+            "Miami Dolphins": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/mia.png", sport: "nfl", id: "15" },
+            "Minnesota Vikings": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/min.png", sport: "nfl", id: "16" },
+            "New England Patriots": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ne.png", sport: "nfl", id: "17" },
+            "New Orleans Saints": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/no.png", sport: "nfl", id: "18" },
+            "New York Giants": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png", sport: "nfl", id: "19" },
+            "New York Jets": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png", sport: "nfl", id: "20" },
+            "Philadelphia Eagles": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png", sport: "nfl", id: "21" },
+            "Pittsburgh Steelers": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/pit.png", sport: "nfl", id: "23" },
+            "San Francisco 49ers": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png", sport: "nfl", id: "25" },
+            "Seattle Seahawks": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/sea.png", sport: "nfl", id: "26" },
+            "Tampa Bay Buccaneers": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/tb.png", sport: "nfl", id: "27" },
+            "Tennessee Titans": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ten.png", sport: "nfl", id: "10" },
+            "Washington Commanders": { logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png", sport: "nfl", id: "28" },
+
+            // Major Colleges (Auto-extended dynamically via API)
+            "Alabama Crimson Tide": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png", sport: "college-football", id: "333" },
+            "Georgia Bulldogs": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png", sport: "college-football", id: "61" },
+            "Ohio State Buckeyes": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png", sport: "college-football", id: "194" },
+            "Texas Longhorns": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png", sport: "college-football", id: "251" },
+            "Oregon Ducks": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png", sport: "college-football", id: "2483" },
+            "Penn State Nittany Lions": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/213.png", sport: "college-football", id: "213" },
+            "Michigan Wolverines": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/130.png", sport: "college-football", id: "130" },
+            "LSU Tigers": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/99.png", sport: "college-football", id: "99" },
+            "Notre Dame Fighting Irish": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/87.png", sport: "college-football", id: "87" },
+            "USC Trojans": { logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/30.png", sport: "college-football", id: "30" }
+        };
+
+        // Helper to retrieve authentic logo URL matching any player's actual team name
+        function getTeamLogoUrl(teamName, fallbackLogo) {
+            if (TEAM_REGISTRY[teamName] && TEAM_REGISTRY[teamName].logoUrl) {
+                return TEAM_REGISTRY[teamName].logoUrl;
+            }
+            // Fuzzy search through registry keys
+            const key = Object.keys(TEAM_REGISTRY).find(k => k.toLowerCase() === (teamName || '').toLowerCase() || k.toLowerCase().includes((teamName || '').toLowerCase()));
+            if (key) return TEAM_REGISTRY[key].logoUrl;
+            return fallbackLogo || "https://a.espncdn.com/i/teamlogos/nfl/500/nfl.png";
+        }
 
         window.addEventListener('DOMContentLoaded', () => {
             const savedName = localStorage.getItem('any_given_spinday_user');
@@ -450,7 +529,6 @@
             fetchTeamsFromESPNEndpoints();
         });
 
-        // Fisher-Yates array randomizer
         function shuffleArray(arr) {
             const copy = [...arr];
             for (let i = copy.length - 1; i > 0; i--) {
@@ -460,33 +538,83 @@
             return copy;
         }
 
+        function formatGameDateTime(isoDateString) {
+            try {
+                const dateObj = new Date(isoDateString);
+                if (isNaN(dateObj.getTime())) throw new Error("Invalid Date");
+
+                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                
+                const dayName = days[dateObj.getDay()];
+                const monthName = months[dateObj.getMonth()];
+                const dayOfMonth = dateObj.getDate();
+                const timeStr = dateObj.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+                return `${dayName}, ${monthName} ${dayOfMonth} • ${timeStr}`;
+            } catch (e) {
+                return "Sun, Oct 25 • 1:00 PM EDT";
+            }
+        }
+
         async function fetchTeamsFromESPNEndpoints() {
             try {
                 let allNflTeams = [];
                 let allNcaafTeams = [];
 
-                // 1. Fetch ALL 32 NFL teams & live scoreboards
-                const [nflTeamsRes, nflScoreRes] = await Promise.all([
+                let nflScoreData = null;
+                const nflScoreRes = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard');
+                if (nflScoreRes.ok) {
+                    nflScoreData = await nflScoreRes.json();
+                }
+
+                let currentWeekNum = 7;
+                let seasonYear = 2026;
+                let seasonType = 2;
+                let currentSlateEvents = [];
+
+                if (nflScoreData) {
+                    currentWeekNum = nflScoreData.week ? nflScoreData.week.number : 7;
+                    seasonYear = nflScoreData.season ? nflScoreData.season.year : 2026;
+                    seasonType = nflScoreData.season ? nflScoreData.season.type : 2;
+                    currentSlateEvents = nflScoreData.events || [];
+                }
+
+                const hasPendingGames = currentSlateEvents.some(ev => {
+                    const state = ev.status && ev.status.type ? ev.status.type.state : 'pre';
+                    return state !== 'post';
+                });
+
+                let targetWeek = currentWeekNum;
+                if (!hasPendingGames && currentSlateEvents.length > 0) {
+                    targetWeek = currentWeekNum + 1;
+                    isMondayNightFootballFinal = true;
+                } else {
+                    isMondayNightFootballFinal = false;
+                }
+
+                activeSlateWeek = targetWeek;
+                document.getElementById('week-display-badge').innerText = `Week ${targetWeek}`;
+
+                const [nflWeekScoreRes, ncaafWeekScoreRes, nflTeamsRes, ncaafTeamsRes] = await Promise.all([
+                    fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${seasonYear}&seasontype=${seasonType}&week=${targetWeek}`),
+                    fetch(`https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?groups=80&week=${targetWeek}`),
                     fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams'),
-                    fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard')
+                    fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=700')
                 ]);
 
-                let nflEvents = [];
-                if (nflScoreRes.ok) {
-                    const scoreData = await nflScoreRes.json();
-                    nflEvents = scoreData.events || [];
-                    if (scoreData.week && scoreData.week.number) {
-                        currentSeasonWeek = scoreData.week.number;
-                        document.getElementById('week-display-badge').innerText = `Week ${currentSeasonWeek}`;
-                    }
+                let targetNflEvents = [];
+                if (nflWeekScoreRes.ok) {
+                    const data = await nflWeekScoreRes.json();
+                    targetNflEvents = data.events || currentSlateEvents;
+                } else {
+                    targetNflEvents = currentSlateEvents;
+                }
 
-                    if (nflEvents.length > 0) {
-                        const uncompletedEvents = nflEvents.filter(ev => {
-                            const statusType = ev.status && ev.status.type ? ev.status.type.state : 'pre';
-                            return statusType !== 'post';
-                        });
-                        isMondayNightFootballFinal = uncompletedEvents.length === 0;
-                    }
+                let targetNcaafEvents = [];
+                if (ncaafWeekScoreRes.ok) {
+                    const data = await ncaafWeekScoreRes.json();
+                    targetNcaafEvents = data.events || [];
                 }
 
                 if (nflTeamsRes.ok) {
@@ -497,17 +625,16 @@
                         const teamId = t.id;
                         const name = t.displayName || t.name;
                         const logoUrl = t.logos && t.logos.length > 0 ? t.logos[0].href : `https://a.espncdn.com/i/teamlogos/nfl/500/${t.abbreviation ? t.abbreviation.toLowerCase() : teamId}.png`;
-                        
+
+                        TEAM_REGISTRY[name] = { logoUrl, sport: "nfl", id: teamId };
+
                         let matchup = "vs. Bye Week";
-                        let datetime = "Sun • 1:00 PM EDT";
-                        const matchedEvent = nflEvents.find(ev => ev.competitions[0].competitors.some(c => c.team.id === teamId));
+                        let datetime = "Sun, Oct 25 • 1:00 PM EDT";
+
+                        const matchedEvent = targetNflEvents.find(ev => ev.competitions[0].competitors.some(c => c.team.id === teamId));
                         if (matchedEvent) {
                             const comp = matchedEvent.competitions[0];
-                            const dateObj = new Date(comp.date);
-                            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                            const dayName = days[dateObj.getDay()];
-                            const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                            datetime = `${dayName} • ${timeStr} EDT`;
+                            datetime = formatGameDateTime(comp.date);
 
                             const selfComp = comp.competitors.find(c => c.team.id === teamId);
                             const oppComp = comp.competitors.find(c => c.team.id !== teamId);
@@ -528,18 +655,6 @@
                     });
                 }
 
-                // 2. Fetch full nationwide pool of College Football FBS teams (limit=700 spans all conferences)
-                const [ncaafTeamsRes, ncaafScoreRes] = await Promise.all([
-                    fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=700'),
-                    fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?limit=100&groups=80')
-                ]);
-
-                let ncaafEvents = [];
-                if (ncaafScoreRes.ok) {
-                    const scoreData = await ncaafScoreRes.json();
-                    ncaafEvents = scoreData.events || [];
-                }
-
                 if (ncaafTeamsRes.ok) {
                     const ncaafData = await ncaafTeamsRes.json();
                     const cfbTeams = ncaafData.sports[0].leagues[0].teams;
@@ -549,16 +664,15 @@
                         const name = t.displayName || t.name;
                         const logoUrl = t.logos && t.logos.length > 0 ? t.logos[0].href : `https://a.espncdn.com/i/teamlogos/ncaa/500/${teamId}.png`;
 
+                        TEAM_REGISTRY[name] = { logoUrl, sport: "college-football", id: teamId };
+
                         let matchup = "vs. Bye Week";
-                        let datetime = "Sat • 3:30 PM EDT";
-                        const matchedEvent = ncaafEvents.find(ev => ev.competitions[0].competitors.some(c => c.team.id === teamId));
+                        let datetime = "Sat, Oct 24 • 3:30 PM EDT";
+
+                        const matchedEvent = targetNcaafEvents.find(ev => ev.competitions[0].competitors.some(c => c.team.id === teamId));
                         if (matchedEvent) {
                             const comp = matchedEvent.competitions[0];
-                            const dateObj = new Date(comp.date);
-                            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                            const dayName = days[dateObj.getDay()];
-                            const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                            datetime = `${dayName} • ${timeStr} EDT`;
+                            datetime = formatGameDateTime(comp.date);
 
                             const selfComp = comp.competitors.find(c => c.team.id === teamId);
                             const oppComp = comp.competitors.find(c => c.team.id !== teamId);
@@ -579,9 +693,11 @@
                     });
                 }
 
-                // 3. Randomize across the complete spectrum: 10 NFL + 10 NCAA
-                const random10NFL = shuffleArray(allNflTeams).slice(0, 10);
-                const random10NCAA = shuffleArray(allNcaafTeams).slice(0, 10);
+                const nflPlayingThisWeek = allNflTeams.filter(t => !t.matchup.includes("Bye Week"));
+                const ncaafPlayingThisWeek = allNcaafTeams.filter(t => !t.matchup.includes("Bye Week"));
+
+                const random10NFL = shuffleArray(nflPlayingThisWeek.length >= 10 ? nflPlayingThisWeek : allNflTeams).slice(0, 10);
+                const random10NCAA = shuffleArray(ncaafPlayingThisWeek.length >= 10 ? ncaafPlayingThisWeek : allNcaafTeams).slice(0, 10);
                 const combinedPool = shuffleArray([...random10NFL, ...random10NCAA]);
 
                 if (combinedPool.length >= 20) {
@@ -591,30 +707,29 @@
                 }
                 renderSpinnerTrack();
             } catch (err) {
-                // Robust randomized fallback across multiple conferences
                 const backupNFL = [
-                    { name: "Arizona Cardinals", id: "22", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png", matchup: "vs. Seahawks", datetime: "Sun • 4:05 PM EDT" },
-                    { name: "Atlanta Falcons", id: "1", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/atl.png", matchup: "@ Saints", datetime: "Sun • 1:00 PM EDT" },
-                    { name: "Buffalo Bills", id: "2", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png", matchup: "vs. Dolphins", datetime: "Sun • 1:00 PM EDT" },
-                    { name: "Chicago Bears", id: "3", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png", matchup: "@ Packers", datetime: "Sun • 4:25 PM EDT" },
-                    { name: "Denver Broncos", id: "7", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/den.png", matchup: "vs. Chiefs", datetime: "Sun • 4:25 PM EDT" },
-                    { name: "Detroit Lions", id: "8", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/det.png", matchup: "vs. Vikings", datetime: "Sun • 1:00 PM EDT" },
-                    { name: "Houston Texans", id: "34", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/hou.png", matchup: "@ Colts", datetime: "Sun • 1:00 PM EDT" },
-                    { name: "Jacksonville Jaguars", id: "30", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/jax.png", matchup: "vs. Titans", datetime: "Sun • 1:00 PM EDT" },
-                    { name: "Philadelphia Eagles", id: "21", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png", matchup: "@ Giants", datetime: "Sun • 1:00 PM EDT" },
-                    { name: "San Francisco 49ers", id: "25", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png", matchup: "vs. Rams", datetime: "Sun • 8:20 PM EDT" }
+                    { name: "Arizona Cardinals", id: "22", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png", matchup: "vs. Seattle Seahawks", datetime: "Sun, Oct 25 • 4:05 PM EDT" },
+                    { name: "Atlanta Falcons", id: "1", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/atl.png", matchup: "@ New Orleans Saints", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Buffalo Bills", id: "2", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png", matchup: "vs. Miami Dolphins", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Chicago Bears", id: "3", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png", matchup: "@ Green Bay Packers", datetime: "Sun, Oct 25 • 4:25 PM EDT" },
+                    { name: "Denver Broncos", id: "7", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/den.png", matchup: "vs. Kansas City Chiefs", datetime: "Sun, Oct 25 • 4:25 PM EDT" },
+                    { name: "Detroit Lions", id: "8", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/det.png", matchup: "vs. Minnesota Vikings", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Houston Texans", id: "34", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/hou.png", matchup: "@ Indianapolis Colts", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Jacksonville Jaguars", id: "30", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/jax.png", matchup: "vs. Tennessee Titans", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "Philadelphia Eagles", id: "21", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png", matchup: "@ New York Giants", datetime: "Sun, Oct 25 • 1:00 PM EDT" },
+                    { name: "San Francisco 49ers", id: "25", sport: "nfl", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png", matchup: "vs. Los Angeles Rams", datetime: "Sun, Oct 25 • 8:20 PM EDT" }
                 ];
                 const backupNCAA = [
-                    { name: "Appalachian State", id: "2026", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2026.png", matchup: "@ Marshall", datetime: "Sat • 3:30 PM EDT" },
-                    { name: "Boise State Broncos", id: "68", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/68.png", matchup: "vs. Fresno State", datetime: "Sat • 10:00 PM EDT" },
-                    { name: "Colorado Buffaloes", id: "38", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/38.png", matchup: "vs. Utah", datetime: "Sat • 12:00 PM EDT" },
-                    { name: "Georgia Bulldogs", id: "61", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png", matchup: "vs. Florida", datetime: "Sat • 3:30 PM EDT" },
-                    { name: "Iowa State Cyclones", id: "66", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/66.png", matchup: "@ Kansas State", datetime: "Sat • 7:30 PM EDT" },
-                    { name: "Memphis Tigers", id: "235", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/235.png", matchup: "vs. Tulane", datetime: "Sat • 7:00 PM EDT" },
-                    { name: "Miami Hurricanes", id: "2390", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png", matchup: "vs. Florida State", datetime: "Sat • 7:30 PM EDT" },
-                    { name: "SMU Mustangs", id: "2567", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2567.png", matchup: "@ Louisville", datetime: "Sat • 4:00 PM EDT" },
-                    { name: "Texas Longhorns", id: "251", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png", matchup: "@ Vanderbilt", datetime: "Sat • 4:15 PM EDT" },
-                    { name: "Washington Huskies", id: "264", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/264.png", matchup: "@ Oregon", datetime: "Sat • 8:00 PM EDT" }
+                    { name: "Appalachian State", id: "2026", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2026.png", matchup: "@ Marshall", datetime: "Sat, Oct 24 • 3:30 PM EDT" },
+                    { name: "Boise State Broncos", id: "68", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/68.png", matchup: "vs. Fresno State", datetime: "Sat, Oct 24 • 10:00 PM EDT" },
+                    { name: "Colorado Buffaloes", id: "38", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/38.png", matchup: "vs. Utah", datetime: "Sat, Oct 24 • 12:00 PM EDT" },
+                    { name: "Georgia Bulldogs", id: "61", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png", matchup: "vs. Florida", datetime: "Sat, Oct 24 • 3:30 PM EDT" },
+                    { name: "Iowa State Cyclones", id: "66", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/66.png", matchup: "@ Kansas State", datetime: "Sat, Oct 24 • 7:30 PM EDT" },
+                    { name: "Memphis Tigers", id: "235", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/235.png", matchup: "vs. Tulane", datetime: "Sat, Oct 24 • 7:00 PM EDT" },
+                    { name: "Miami Hurricanes", id: "2390", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png", matchup: "vs. Florida State", datetime: "Sat, Oct 24 • 7:30 PM EDT" },
+                    { name: "SMU Mustangs", id: "2567", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/2567.png", matchup: "@ Louisville", datetime: "Sat, Oct 24 • 4:00 PM EDT" },
+                    { name: "Texas Longhorns", id: "251", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png", matchup: "@ Vanderbilt", datetime: "Sat, Oct 24 • 4:15 PM EDT" },
+                    { name: "Washington Huskies", id: "264", sport: "college-football", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/264.png", matchup: "@ Oregon", datetime: "Sat, Oct 24 • 8:00 PM EDT" }
                 ];
                 currentWeekTeams = shuffleArray([...backupNFL, ...backupNCAA]);
                 renderSpinnerTrack();
@@ -741,7 +856,7 @@
             leaguesData[leagueId] = {
                 name: leagueName,
                 createdAt: new Date().toISOString(),
-                currentWeek: currentSeasonWeek,
+                currentWeek: activeSlateWeek,
                 rosters: {
                     [currentUser.name]: {}
                 },
@@ -815,7 +930,7 @@
         function syncWeeklyAIRoster() {
             if (!currentLeague.aiRosters) currentLeague.aiRosters = {};
             
-            const aiWeekKey = `week_${currentSeasonWeek}`;
+            const aiWeekKey = `week_${activeSlateWeek}`;
             if (!currentLeague.aiRosters[aiWeekKey]) {
                 currentLeague.aiRosters[aiWeekKey] = generateAIRoster();
                 saveLeaguesStorage();
@@ -824,36 +939,68 @@
 
         function generateAIRoster() {
             const botRoster = {};
-            const availableTeams = currentWeekTeams.length > 0 ? [...currentWeekTeams] : [
-                { name: "Kansas City Chiefs", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png", matchup: "vs. Raiders" },
-                { name: "Detroit Lions", logoUrl: "https://a.espncdn.com/i/teamlogos/nfl/500/det.png", matchup: "vs. Vikings" },
-                { name: "Georgia Bulldogs", logoUrl: "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png", matchup: "vs. Gators" }
-            ];
-
+            // Authentic NFL & College Football star candidates with verified team affiliations
             const samplePicks = {
-                'QB': [{ name: "Patrick Mahomes", pos: "QB", proj: 22.4 }, { name: "Josh Allen", pos: "QB", proj: 23.1 }, { name: "Jalen Hurts", pos: "QB", proj: 21.0 }],
-                'RB1': [{ name: "Bijan Robinson", pos: "RB", proj: 18.2 }, { name: "Saquon Barkley", pos: "RB", proj: 19.5 }],
-                'RB2': [{ name: "Jahmyr Gibbs", pos: "RB", proj: 16.4 }, { name: "Derrick Henry", pos: "RB", proj: 17.0 }],
-                'WR1': [{ name: "Justin Jefferson", pos: "WR", proj: 19.8 }, { name: "CeeDee Lamb", pos: "WR", proj: 18.9 }],
-                'WR2': [{ name: "Amon-Ra St. Brown", pos: "WR", proj: 17.5 }, { name: "Ja'Marr Chase", pos: "WR", proj: 18.1 }],
-                'TE': [{ name: "Travis Kelce", pos: "TE", proj: 13.8 }, { name: "Sam LaPorta", pos: "TE", proj: 12.5 }],
-                'FLEX': [{ name: "Nico Collins", pos: "WR", proj: 15.0 }, { name: "De'Von Achane", pos: "RB", proj: 15.6 }],
-                'DST': [{ name: "49ers D/ST", pos: "DST", proj: 9.5 }, { name: "Ravens D/ST", pos: "DST", proj: 9.0 }],
-                'K': [{ name: "Harrison Butker", pos: "K", proj: 8.5 }, { name: "Justin Tucker", pos: "K", proj: 8.5 }]
+                'QB': [
+                    { name: "Patrick Mahomes", pos: "QB", team: "Kansas City Chiefs", proj: 22.4 },
+                    { name: "Josh Allen", pos: "QB", team: "Buffalo Bills", proj: 23.1 },
+                    { name: "Jalen Hurts", pos: "QB", team: "Philadelphia Eagles", proj: 21.0 },
+                    { name: "Lamar Jackson", pos: "QB", team: "Baltimore Ravens", proj: 22.8 }
+                ],
+                'RB1': [
+                    { name: "Bijan Robinson", pos: "RB", team: "Atlanta Falcons", proj: 18.2 },
+                    { name: "Saquon Barkley", pos: "RB", team: "Philadelphia Eagles", proj: 19.5 },
+                    { name: "Christian McCaffrey", pos: "RB", team: "San Francisco 49ers", proj: 20.0 }
+                ],
+                'RB2': [
+                    { name: "Jahmyr Gibbs", pos: "RB", team: "Detroit Lions", proj: 16.4 },
+                    { name: "Derrick Henry", pos: "RB", team: "Baltimore Ravens", proj: 17.0 },
+                    { name: "Breece Hall", pos: "RB", team: "New York Jets", proj: 15.8 }
+                ],
+                'WR1': [
+                    { name: "Justin Jefferson", pos: "WR", team: "Minnesota Vikings", proj: 19.8 },
+                    { name: "CeeDee Lamb", pos: "WR", team: "Dallas Cowboys", proj: 18.9 },
+                    { name: "Ja'Marr Chase", pos: "WR", team: "Cincinnati Bengals", proj: 18.5 }
+                ],
+                'WR2': [
+                    { name: "Amon-Ra St. Brown", pos: "WR", team: "Detroit Lions", proj: 17.5 },
+                    { name: "A.J. Brown", pos: "WR", team: "Philadelphia Eagles", proj: 17.2 },
+                    { name: "Tyreek Hill", pos: "WR", team: "Miami Dolphins", proj: 18.1 }
+                ],
+                'TE': [
+                    { name: "Travis Kelce", pos: "TE", team: "Kansas City Chiefs", proj: 13.8 },
+                    { name: "Sam LaPorta", pos: "TE", team: "Detroit Lions", proj: 12.5 },
+                    { name: "George Kittle", pos: "TE", team: "San Francisco 49ers", proj: 13.2 }
+                ],
+                'FLEX': [
+                    { name: "Nico Collins", pos: "WR", team: "Houston Texans", proj: 15.0 },
+                    { name: "De'Von Achane", pos: "RB", team: "Miami Dolphins", proj: 15.6 },
+                    { name: "Kyren Williams", pos: "RB", team: "Los Angeles Rams", proj: 16.1 }
+                ],
+                'DST': [
+                    { name: "San Francisco 49ers D/ST", pos: "DST", team: "San Francisco 49ers", proj: 9.5 },
+                    { name: "Baltimore Ravens D/ST", pos: "DST", team: "Baltimore Ravens", proj: 9.0 },
+                    { name: "Denver Broncos D/ST", pos: "DST", team: "Denver Broncos", proj: 8.8 }
+                ],
+                'K': [
+                    { name: "Harrison Butker", pos: "K", team: "Kansas City Chiefs", proj: 8.5 },
+                    { name: "Justin Tucker", pos: "K", team: "Baltimore Ravens", proj: 8.5 },
+                    { name: "Jake Elliott", pos: "K", team: "Philadelphia Eagles", proj: 8.0 }
+                ]
             };
 
             POSITIONS.forEach(pos => {
-                const team = availableTeams[Math.floor(Math.random() * availableTeams.length)];
                 const candidatePool = samplePicks[pos] || samplePicks['FLEX'];
                 const selected = candidatePool[Math.floor(Math.random() * candidatePool.length)];
                 const liveScore = +(selected.proj * (0.85 + Math.random() * 0.35)).toFixed(1);
+                const exactLogo = getTeamLogoUrl(selected.team);
 
                 botRoster[pos] = {
                     name: selected.name,
                     pos: selected.pos,
-                    team: team.name,
-                    logoUrl: team.logoUrl,
-                    matchup: team.matchup,
+                    team: selected.team,
+                    logoUrl: exactLogo,
+                    matchup: "vs. Opponent",
                     projected: selected.proj,
                     score: liveScore
                 };
@@ -895,7 +1042,7 @@
             let html = '';
             for (let repeat = 0; repeat < 5; repeat++) {
                 currentWeekTeams.forEach(t => {
-                    html += `<div class="spinner-item"><div class="flex items-center gap-2 mb-1"><img src="${t.logoUrl}" class="w-8 h-8 object-contain drop-shadow" alt="logo"><span>${t.name}</span></div><span class="text-xs text-slate-400">${t.matchup}</span></div>`;
+                    html += `<div class="spinner-item"><div class="flex items-center gap-2 mb-1"><img src="${t.logoUrl}" class="w-8 h-8 object-contain drop-shadow" alt="logo"><span>${t.name}</span></div><span class="text-xs text-slate-400">${t.matchup} • ${t.datetime}</span></div>`;
                 });
             }
             track.innerHTML = html;
@@ -976,11 +1123,17 @@
             const titleEl = document.getElementById('modal-title');
             const subtitleEl = document.getElementById('modal-subtitle');
             const logoImg = document.getElementById('modal-team-logo-img');
+            const sportTag = document.getElementById('modal-sport-tag');
+
+            document.getElementById('modal-game-datetime').innerText = currentSpinTeam.datetime;
+            document.getElementById('modal-game-matchup').innerText = currentSpinTeam.matchup;
 
             logoImg.src = currentSpinTeam.logoUrl;
             logoImg.classList.remove('hidden');
             titleEl.innerText = `${currentSpinTeam.name}`;
-            subtitleEl.innerText = `${currentSpinTeam.matchup}${targetSlot ? ' • Target Slot: ' + targetSlot : ''}`;
+            sportTag.innerText = currentSpinTeam.sport === 'nfl' ? 'NFL' : 'NCAA';
+            subtitleEl.innerText = `${targetSlot ? 'Target Slot: ' + targetSlot + ' • ' : ''}Live ESPN Depth Chart`;
+            
             modal.classList.remove('hidden');
             listEl.innerHTML = '';
             loader.classList.remove('hidden');
@@ -1004,6 +1157,8 @@
                                         players.push({
                                             name: athlete.fullName || athlete.displayName,
                                             pos: posAbbr,
+                                            team: currentSpinTeam.name,
+                                            logoUrl: currentSpinTeam.logoUrl,
                                             isStarter: isStarter,
                                             lastWeek: +(randomizedProj * (0.8 + Math.random() * 0.4)).toFixed(1),
                                             projected: randomizedProj,
@@ -1021,13 +1176,13 @@
 
             if (players.length === 0) {
                 players = [
-                    { name: "Starting Quarterback", pos: "QB", isStarter: true, lastWeek: 21.4, projected: 22.5, injury: "Healthy" },
-                    { name: "Star Running Back", pos: "RB", isStarter: true, lastWeek: 18.2, projected: 17.5, injury: "Healthy" },
-                    { name: "Primary Wideout", pos: "WR", isStarter: true, lastWeek: 19.5, projected: 18.2, injury: "Healthy" },
-                    { name: "Backup Wideout", pos: "WR", isStarter: false, lastWeek: 7.2, projected: 6.8, injury: "Healthy" },
-                    { name: "Reliable Tight End", pos: "TE", isStarter: true, lastWeek: 13.5, projected: 12.8, injury: "Healthy" },
-                    { name: "Team Defense", pos: "DST", isStarter: true, lastWeek: 10.0, projected: 9.0, injury: "Healthy" },
-                    { name: "Starting Kicker", pos: "K", isStarter: true, lastWeek: 9.0, projected: 8.5, injury: "Healthy" }
+                    { name: "Starting Quarterback", pos: "QB", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: true, lastWeek: 21.4, projected: 22.5, injury: "Healthy" },
+                    { name: "Star Running Back", pos: "RB", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: true, lastWeek: 18.2, projected: 17.5, injury: "Healthy" },
+                    { name: "Primary Wideout", pos: "WR", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: true, lastWeek: 19.5, projected: 18.2, injury: "Healthy" },
+                    { name: "Backup Wideout", pos: "WR", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: false, lastWeek: 7.2, projected: 6.8, injury: "Healthy" },
+                    { name: "Reliable Tight End", pos: "TE", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: true, lastWeek: 13.5, projected: 12.8, injury: "Healthy" },
+                    { name: "Team Defense", pos: "DST", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: true, lastWeek: 10.0, projected: 9.0, injury: "Healthy" },
+                    { name: "Starting Kicker", pos: "K", team: currentSpinTeam.name, logoUrl: currentSpinTeam.logoUrl, isStarter: true, lastWeek: 9.0, projected: 8.5, injury: "Healthy" }
                 ];
             }
 
@@ -1125,11 +1280,14 @@
                 }
             }
 
+            // Ensure exact team logo is coupled with the athlete
+            const exactLogo = getTeamLogoUrl(currentSpinTeam.name, currentSpinTeam.logoUrl);
+
             currentLeague.rosters[currentUser.name][targetSlot] = {
                 name: name,
                 pos: pos,
                 team: currentSpinTeam.name,
-                logoUrl: currentSpinTeam.logoUrl,
+                logoUrl: exactLogo,
                 matchup: currentSpinTeam.matchup,
                 datetime: currentSpinTeam.datetime,
                 projected: projected,
@@ -1176,13 +1334,15 @@
 
             POSITIONS.forEach(pos => {
                 const p = roster[pos];
+                const playerLogo = p ? getTeamLogoUrl(p.team, p.logoUrl) : null;
+
                 html += `
                     <div class="grid grid-cols-12 gap-4 p-3 items-center text-sm">
                         <div class="col-span-2 text-center font-bold text-emerald-400 bg-slate-800/80 py-1 rounded border border-slate-700">${pos}</div>
                         <div class="col-span-4 flex items-center gap-2.5">
-                            ${p && p.logoUrl ? `<img src="${p.logoUrl}" class="w-8 h-8 object-contain" alt="logo">` : ''}
+                            ${playerLogo ? `<div class="w-8 h-8 rounded-lg bg-slate-800/90 border border-slate-700 flex items-center justify-center p-1 flex-shrink-0"><img src="${playerLogo}" class="w-full h-full object-contain" alt="logo"></div>` : ''}
                             <div>
-                                ${p ? `<div class="font-bold text-white">${p.name}</div><div class="text-[10px] text-slate-400">${p.team} (${p.matchup})</div>` : `<div class="text-slate-500 italic">Empty Slot</div>`}
+                                ${p ? `<div class="font-bold text-white">${p.name}</div><div class="text-[10px] text-slate-400">${p.team} (${p.matchup})</div><div class="text-[9px] text-emerald-400 font-mono">${p.datetime || ''}</div>` : `<div class="text-slate-500 italic">Empty Slot</div>`}
                             </div>
                         </div>
                         <div class="col-span-2 text-center font-bold text-emerald-400">${p ? p.projected.toFixed(1) : '-'}</div>
@@ -1227,10 +1387,10 @@
 
             const myRoster = currentLeague.rosters[myName] || {};
             const firstPlayer = Object.values(myRoster)[0];
-            const scheduleText = firstPlayer && firstPlayer.datetime ? `${firstPlayer.datetime} • ${firstPlayer.matchup}` : (currentWeekTeams.length > 0 ? `${currentWeekTeams[0].datetime} • ${currentWeekTeams[0].matchup}` : "Sun • 1:00 PM EDT");
+            const scheduleText = firstPlayer && firstPlayer.datetime ? `${firstPlayer.datetime} • ${firstPlayer.matchup}` : (currentWeekTeams.length > 0 ? `${currentWeekTeams[0].datetime} • ${currentWeekTeams[0].matchup}` : "Sun, Oct 25 • 1:00 PM EDT");
             document.getElementById('matchup-datetime-text').innerText = scheduleText;
 
-            const aiWeekKey = `week_${currentSeasonWeek}`;
+            const aiWeekKey = `week_${activeSlateWeek}`;
             const oppRoster = (oppName === "AI Rival") 
                 ? (currentLeague.aiRosters && currentLeague.aiRosters[aiWeekKey] ? currentLeague.aiRosters[aiWeekKey] : {}) 
                 : (currentLeague.rosters[oppName] || {});
@@ -1242,29 +1402,49 @@
             if (oppTotal === 0 && oppName === "AI Rival") oppTotal = 94.2;
             document.getElementById('matchup-opp-score').innerText = oppTotal.toFixed(1);
 
-            let myRosterHtml = `<div class="font-bold text-slate-400 mb-1">${myName}'s Lineup</div>`;
+            // Render Human Lineup with Verified Exact Team Logos
+            let myRosterHtml = `<div class="font-bold text-slate-400 mb-2">${myName}'s Lineup</div>`;
             POSITIONS.forEach(pos => {
                 const p = myRoster[pos];
-                myRosterHtml += `<div class="flex justify-between items-center text-slate-300 py-1 border-b border-slate-800">
-                    <span class="flex items-center gap-1.5 truncate max-w-[220px]">
-                        ${p && p.logoUrl ? `<img src="${p.logoUrl}" class="w-4 h-4 object-contain inline-block" alt="logo">` : ''}
-                        <span>${pos}: ${p ? p.name + ' (' + p.team + ')' : 'Empty'}</span>
-                    </span>
-                    <span class="font-bold text-emerald-400">${p ? p.score.toFixed(1) : '0.0'}</span>
-                </div>`;
+                const playerLogo = p ? getTeamLogoUrl(p.team, p.logoUrl) : null;
+
+                myRosterHtml += `
+                    <div class="flex justify-between items-center bg-slate-950/50 p-2 rounded-lg border border-slate-800">
+                        <div class="flex items-center gap-2.5 truncate max-w-[240px]">
+                            <div class="w-7 h-7 rounded-md bg-slate-900 border border-slate-700/80 flex items-center justify-center p-1 flex-shrink-0">
+                                ${playerLogo ? `<img src="${playerLogo}" class="w-full h-full object-contain" alt="${p ? p.team : 'logo'}">` : `<i class="fas fa-football-ball text-slate-600 text-xs"></i>`}
+                            </div>
+                            <div class="truncate">
+                                <div class="font-bold text-white text-xs truncate">${p ? p.name : 'Empty Slot'}</div>
+                                <div class="text-[10px] text-slate-400 font-mono">${pos} • ${p ? p.team : 'Unfilled'}</div>
+                            </div>
+                        </div>
+                        <div class="font-black text-emerald-400 text-sm ml-2">${p ? p.score.toFixed(1) : '0.0'}</div>
+                    </div>
+                `;
             });
             document.getElementById('matchup-my-roster').innerHTML = myRosterHtml;
 
-            let oppRosterHtml = `<div class="font-bold text-slate-400 mb-1">${oppName}'s Lineup (Week ${currentSeasonWeek} Repick)</div>`;
+            // Render Opponent / AI Lineup with Verified Exact Team Logos
+            let oppRosterHtml = `<div class="font-bold text-slate-400 mb-2">${oppName}'s Lineup (Week ${activeSlateWeek})</div>`;
             POSITIONS.forEach(pos => {
                 const p = oppRoster[pos];
-                oppRosterHtml += `<div class="flex justify-between items-center text-slate-300 py-1 border-b border-slate-800">
-                    <span class="flex items-center gap-1.5 truncate max-w-[220px]">
-                        ${p && p.logoUrl ? `<img src="${p.logoUrl}" class="w-4 h-4 object-contain inline-block" alt="logo">` : ''}
-                        <span>${pos}: ${p ? p.name + ' (' + p.team + ')' : 'Opponent Player'}</span>
-                    </span>
-                    <span class="font-bold text-rose-400">${p ? p.score.toFixed(1) : '10.5'}</span>
-                </div>`;
+                const playerLogo = p ? getTeamLogoUrl(p.team, p.logoUrl) : null;
+
+                oppRosterHtml += `
+                    <div class="flex justify-between items-center bg-slate-950/50 p-2 rounded-lg border border-slate-800">
+                        <div class="flex items-center gap-2.5 truncate max-w-[240px]">
+                            <div class="w-7 h-7 rounded-md bg-slate-900 border border-slate-700/80 flex items-center justify-center p-1 flex-shrink-0">
+                                ${playerLogo ? `<img src="${playerLogo}" class="w-full h-full object-contain" alt="${p ? p.team : 'logo'}">` : `<i class="fas fa-football-ball text-slate-600 text-xs"></i>`}
+                            </div>
+                            <div class="truncate">
+                                <div class="font-bold text-white text-xs truncate">${p ? p.name : 'Empty Slot'}</div>
+                                <div class="text-[10px] text-slate-400 font-mono">${pos} • ${p ? p.team : 'Opponent'}</div>
+                            </div>
+                        </div>
+                        <div class="font-black text-rose-400 text-sm ml-2">${p ? p.score.toFixed(1) : '0.0'}</div>
+                    </div>
+                `;
             });
             document.getElementById('matchup-opp-roster').innerHTML = oppRosterHtml;
 
@@ -1273,7 +1453,7 @@
 
             if (isMondayNightFootballFinal) {
                 statusEl.className = "w-full text-center py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider bg-emerald-950/80 border border-emerald-600/50 text-emerald-300";
-                statusEl.innerText = `Week ${currentSeasonWeek} Final • Monday Night Football Concluded`;
+                statusEl.innerText = `Week ${activeSlateWeek - 1} Final • Settled After Monday Night Football`;
 
                 banner.classList.remove('hidden');
                 if (myTotal >= oppTotal) {
@@ -1286,7 +1466,7 @@
                 }
             } else {
                 statusEl.className = "w-full text-center py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider bg-slate-900 border border-slate-700 text-amber-400";
-                statusEl.innerText = `Week ${currentSeasonWeek} In Progress • Final Outcome & Animations Locked Until MNF Goes Final`;
+                statusEl.innerText = `Week ${activeSlateWeek} Active • Matchup Animations Settle After MNF`;
                 banner.classList.add('hidden');
             }
         }
@@ -1326,4 +1506,5 @@
         }
     </script>
 </body>
+</html>
 </html>
